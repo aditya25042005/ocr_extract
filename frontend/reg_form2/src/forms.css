@@ -1,0 +1,19 @@
+.reg1 { /* Left side: form */
+  width: 40vw;  /* half the viewport width */
+  overflow-y: auto;
+  margin-right: 5vw;
+}
+
+.reg2 { /* Right side: PDF preview */
+  width: 40vw;  /* other half */
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.reg { /* Parent container */
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+}
