@@ -11,19 +11,21 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR/'.env')
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-0r)*hhlw%zn&&e))f#3=_ds4c=xd&2^7h1k4ce469bug#b&4w#'
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY','unsafe-dev-key')
+DEBUG=os.getenv('DJANGO_DEBUG','True')=='True'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
 ALLOWED_HOSTS = []
 
@@ -31,8 +33,11 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'django_extensions',
+    'rest_framework',
+    'cloudinary',
+    'cloudinary_storage',
     'verify_user',
-      'rest_framework',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -122,3 +127,32 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# from mongoengine import connect
+# MONGODB_URI=os.getenv('MONGODB_URI')
+# if MONGODB_URI:
+#     connect(host=MONGODB_URI)
+
+import cloudinary 
+cloudinary.config(
+    secure=True,
+    url=os.getenv('CLOUDINARY_URL')
+)
+# Cloudinary/Django storage config
+CLOUDINARY_URL = os.getenv('CLOUDINARY_URL')  # optional single url like cloudinary://API_KEY:API_SECRET@CLOUD_NAME
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': os.getenv('CLOUDINARY_API_KEY'),
+    'API_SECRET': os.getenv('CLOUDINARY_API_SECRET'),
+}
+
+# Use Cloudinary for default media files
+# If CLOUDINARY_CLOUD_NAME isn't set, fallback to local file storage
+if CLOUDINARY_STORAGE['CLOUD_NAME']:
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+else:
+    # default development local media
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = BASE_DIR / 'media'
+
