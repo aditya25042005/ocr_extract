@@ -128,31 +128,38 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# from mongoengine import connect
-# MONGODB_URI=os.getenv('MONGODB_URI')
-# if MONGODB_URI:
-#     connect(host=MONGODB_URI)
+# import cloudinary
+# import cloudinary.uploader
+# import cloudinary.api
 
-import cloudinary 
-cloudinary.config(
-    secure=True,
-    url=os.getenv('CLOUDINARY_URL')
-)
-# Cloudinary/Django storage config
-CLOUDINARY_URL = os.getenv('CLOUDINARY_URL')  # optional single url like cloudinary://API_KEY:API_SECRET@CLOUD_NAME
+# CLOUDINARY_CLOUD_NAME = os.getenv('CLOUDINARY_CLOUD_NAME')
+# CLOUDINARY_API_KEY = os.getenv('CLOUDINARY_API_KEY')
+# CLOUDINARY_API_SECRET = os.getenv('CLOUDINARY_API_SECRET')
 
-CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME'),
-    'API_KEY': os.getenv('CLOUDINARY_API_KEY'),
-    'API_SECRET': os.getenv('CLOUDINARY_API_SECRET'),
+# cloudinary.config(
+#     cloud_name=CLOUDINARY_CLOUD_NAME,
+#     api_key=CLOUDINARY_API_KEY,
+#     api_secret=CLOUDINARY_API_SECRET,
+#     secure=True
+# )
+
+# DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+# # MEDIA_URL = '/'
+
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+    "default": {
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+    },
 }
 
-# Use Cloudinary for default media files
-# If CLOUDINARY_CLOUD_NAME isn't set, fallback to local file storage
-if CLOUDINARY_STORAGE['CLOUD_NAME']:
-    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-else:
-    # default development local media
-    MEDIA_URL = '/media/'
-    MEDIA_ROOT = BASE_DIR / 'media'
+CLOUDINARY_STORAGE = {
+    "CLOUD_NAME": os.getenv("CLOUDINARY_CLOUD_NAME"),
+    "API_KEY": os.getenv("CLOUDINARY_API_KEY"),
+    "API_SECRET": os.getenv("CLOUDINARY_API_SECRET"),
+}
+
+
 

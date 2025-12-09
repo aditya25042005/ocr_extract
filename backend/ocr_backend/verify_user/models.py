@@ -30,6 +30,7 @@ class PassportRecord(models.Model):
     permanent_pincode=models.CharField(max_length=10, blank=True)
     permanent_country=models.CharField(max_length=100, blank=True)
 
+    name_gender_proof=models.FileField(upload_to="name_gender_proof/")
     dob_proof=models.FileField(upload_to="dob_proofs/")
     address_proof = models.FileField(upload_to="address_proofs/")
     
