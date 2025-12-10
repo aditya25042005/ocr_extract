@@ -4,7 +4,7 @@ __pycache__/
 *.pyo
 *.pyd
 
-# Virtualenv (we keep venv outside repo, but still)
+# Virtualenv
 venv/
 env/
 
@@ -25,3 +25,9 @@ staticfiles/
 
 # OS
 .DS_Store
+
+# ML MODELS — ignore large files
+ML/model_cache/
+ML/model_cache/**
+*.bin
+*.safetensors

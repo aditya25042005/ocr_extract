@@ -12,6 +12,11 @@ from rest_framework.decorators import api_view
 from .models import EmailOTP
 from .serializers import EmailSerializer,OTPVerifySerializer
 
+from ML.aadhar_ocr import extract_aadhar_smart
+from django.core.files.temp import NamedTemporaryFile
+
+from ML.handwritten_ocr import handwritten_extract
+
 
 class PassportRecordCreateView(CreateAPIView):
     queryset=PassportRecord.objects.all()
@@ -52,5 +57,46 @@ def verify_otp(req):
         return Response({"error":"invalid otp"},status=400)
     return Response({"message": "OTP verified! User can now log in."})
 
+@api_view(['POST'])
+def aadhar_ocr_view(request):
+    # Case 1: Cloudinary URL provided
+    if "url" in request.data:
+        image_url = request.data["url"]
+        temp_file = NamedTemporaryFile(delete=False)
+
+        # Download the image from Cloudinary
+        resp = request.get(image_url)
+        temp_file.write(resp.content)
+        temp_file.close()
+
+        result = extract_aadhar_smart(temp_file.name)
+        return Response(result)
+
+    # Case 2: File uploaded directly
+    file = request.FILES.get("file")
+    if not file:
+        return Response({"error": "Upload a file or send a URL"}, status=400)
+
+    temp_file = NamedTemporaryFile(delete=False)
+    for chunk in file.chunks():
+        temp_file.write(chunk)
+    temp_file.close()
+
+    result = extract_aadhar_smart(temp_file.name)
+    return Response(result)
+
+@api_view(['POST'])
+def handwritten_ocr_view(request):
+    file = request.FILES.get("file")
+    if not file:
+        return Response({"error": "Upload a file"}, status=400)
+
+    temp_file = NamedTemporaryFile(delete=False)
+    for chunk in file.chunks():
+        temp_file.write(chunk)
+    temp_file.close()
+
+    result = handwritten_extract(temp_file.name)
+    return Response(result)
 
 
