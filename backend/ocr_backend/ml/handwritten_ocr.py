@@ -17,7 +17,7 @@ from craft_text_detector import (
 )
 
 # --- 1. CONFIGURATION ---
-FILE_PATH = 'doc5.jpg'  # <--- Replace with your file
+FILE_PATH = 'doc7.jpg'  # <--- Replace with your file
 USE_GPU = torch.cuda.is_available()
 device = "cuda" if USE_GPU else "cpu"
 POPPLER_PATH = r'D:\ELHAN\MOSIP\poppler-25.12.0\Library\bin' # Update if needed
@@ -256,25 +256,63 @@ def extract_fields_with_coords(lines_data):
             coords, conf = map_to_line(val)
             final_output["Pincode"] = {"value": val, "coordinates": coords, "confidence_score": conf if conf else 1.0}
 
-    # 2. Phone Number (NEW ADDITION)
-    # We add this BEFORE GLiNER because Regex is better at catching "98959 - 75260"
-    # This pattern catches 10-15 digits with optional spaces or hyphens
-    phone_match = re.search(r'(?:Ph|Phone|Mob|Mobile|Cell)?\s*[:\.]?\s*(\+?\d[\d\s\-]{8,15}\d)', full_text_block, re.IGNORECASE)
-    if phone_match:
-        raw_val = phone_match.group(1)
-        # Clean the value (remove spaces/hyphens) for final output
-        clean_phone = re.sub(r'[\s\-]', '', raw_val)
-        
-        if len(clean_phone) >= 10:
-            # We map using the RAW value (with spaces) to find coordinates correctly
-            coords, conf = map_to_line(raw_val.strip())
-            
-            # If map_to_line fails (because raw_val spans lines or is partial), try finding the line containing the first chunk
-            if not coords:
-                first_chunk = raw_val.split('-')[0].strip()
-                coords, conf = map_to_line(first_chunk)
+    # 2. Phone Number (Improved Logic)
+    # Strategy: 
+    #   Priority 1: Look for a LABELED phone number (e.g. "Phone: 98959...")
+    #   Priority 2: If none, look for UNLABELED digits, but filter out Dates.
+    
+    phone_val = None
+    phone_coords = []
+    phone_conf = 0.0
 
-            final_output["Phone"] = {"value": clean_phone, "coordinates": coords, "confidence_score": conf if conf else 0.8}
+    # --- Pass 1: High Confidence Labeled Match ---
+    # Looks for "Phone", "Mob", etc., followed by digits
+    labeled_match = re.search(r'(?:Ph|Phone|Mob|Mobile|Cell|Tel)\s*[:\.]?\s*([+\d\s\-]{10,15})', full_text_block, re.IGNORECASE)
+    
+    if labeled_match:
+        raw_val = labeled_match.group(1)
+        phone_val = re.sub(r'[^\d+]', '', raw_val) # Clean to just digits
+        coords, conf = map_to_line(raw_val.strip())
+        phone_coords, phone_conf = coords, conf
+
+    # --- Pass 2: Standalone / Unlabeled Match (Fallback) ---
+    # Only run if we didn't find a labeled phone number
+    if not phone_val:
+        # re.finditer finds ALL matches, not just the first one
+        # matches sequences of 10 to 15 digits/hyphens/spaces
+        candidates = re.finditer(r'\b(?:\+?[\d\s\-]{10,15})\b', full_text_block)
+        
+        for cand in candidates:
+            raw_text = cand.group(0).strip()
+            clean_text = re.sub(r'[^\d]', '', raw_text)
+            
+            # FILTER 1: Length Check (Valid phones are usually 10-13 digits)
+            if len(clean_text) < 10 or len(clean_text) > 13:
+                continue
+
+            # FILTER 2: Date Check (The crucial fix for doc5.jpg)
+            # If it has 2 hyphens or slashes (e.g., 05-04-2005), it's a date, not a phone.
+            if raw_text.count('-') >= 2 or raw_text.count('/') >= 2:
+                continue
+            
+            # FILTER 3: Pincode Check
+            # Ensure we didn't accidentally pick up the pincode if it was long
+            if "Pincode" in final_output and clean_text == final_output["Pincode"]["value"]:
+                continue
+
+            # If it survives the filters, it's our phone number!
+            phone_val = clean_text
+            coords, conf = map_to_line(raw_text)
+            
+            # If map_to_line failed on the full text, try mapping just the clean digits
+            if not coords: 
+                coords, conf = map_to_line(clean_text)
+
+            phone_coords, phone_conf = coords, conf
+            break # We found a valid phone, stop searching
+
+    if phone_val:
+        final_output["Phone"] = {"value": phone_val, "coordinates": phone_coords, "confidence_score": phone_conf if phone_conf else 0.8}
 
     # 3. Email (No change)
     email_match = re.search(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', full_text_block)
@@ -345,6 +383,43 @@ def extract_fields_with_coords(lines_data):
             else:
                 final_output["Address"] = {"value": txt, "coordinates": coords, "confidence_score": final_conf}
 
+    # --- C. POST-PROCESSING: NAME SPLITTING ---
+    if "Name" in final_output:
+        full_name = final_output["Name"]["value"].strip()
+        coords = final_output["Name"]["coordinates"]
+        conf = final_output["Name"]["confidence_score"]
+        
+        # Split by whitespace
+        parts = full_name.split()
+        
+        first_name = ""
+        middle_name = ""
+        last_name = ""
+        
+        if len(parts) == 1:
+            # Case: "Abigail"
+            first_name = parts[0]
+            last_name = "" # or leave blank
+            
+        elif len(parts) == 2:
+            # Case: "Abigail Summer"
+            first_name = parts[0]
+            last_name = parts[1]
+            
+        elif len(parts) >= 3:
+            # Case: "Elhan B Thomas" or "Abigail Grace Summer"
+            first_name = parts[0]
+            last_name = parts[-1] # The very last word is the Last Name
+            middle_name = " ".join(parts[1:-1]) # Everything in between is Middle Name
+            
+        # Add the new fields to the output
+        final_output["First Name"] = {"value": first_name, "coordinates": coords, "confidence_score": conf}
+        final_output["Middle Name"] = {"value": middle_name, "coordinates": coords, "confidence_score": conf}
+        final_output["Last Name"] = {"value": last_name, "coordinates": coords, "confidence_score": conf}
+        
+        # Optional: Remove the raw "Name" field if you don't need it anymore
+        del final_output["Name"]
+        
     return final_output
 
 # --- EXECUTE ---
