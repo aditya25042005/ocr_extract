@@ -194,7 +194,7 @@ def extract_fields_with_coords(lines_data):
         final_output["Email"] = {"value": val, "coordinates": coords, "confidence_score": conf if conf else 1.0}
 
     # 3. Blood Group
-    bg_pattern = r'\b(A|B|AB|O)[-\s]?(?:[\+\-]|positive|negative|\+ve|\-ve)?\b'
+    bg_pattern = r'\b(A|B|AB|O)[-\s]?(?:positive|negative|\+ve|\-ve|[\+\-])?(?!\w)'
     for match in re.finditer(bg_pattern, full_text_block, re.IGNORECASE):
         raw_val = match.group(0)
         norm_val = raw_val.upper().replace('POSITIVE','+').replace('NEGATIVE','-').replace('VE','').replace(' ','').replace('++','+')
