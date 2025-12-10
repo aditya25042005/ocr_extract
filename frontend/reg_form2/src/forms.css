@@ -1,19 +1,21 @@
-.reg1 { /* Left side: form */
-  width: 40vw;  /* half the viewport width */
-  overflow-y: auto;
-  margin-right: 5vw;
-}
 
-.reg2 { /* Right side: PDF preview */
-  width: 40vw;  /* other half */
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
+.full-form{
 
-.reg { /* Parent container */
   display: flex;
-  width: 100vw;
-  height: 100vh;
+  flex-direction: row;
+  justify-content: space-between;
+  
+}
+.full-form > .reg, 
+.full-form > .reg2 {
+    flex: 1;              /* Grow to fill space equally */
+    width: auto;          /* Let flex control the width */
+    height: 100vh;        /* Full viewport height */
+    overflow-y: auto;     /* Scroll internally if content is too long */
+}
+.pdf-viewer{
+
+
+  flex:1;
+  height:auto;
 }
