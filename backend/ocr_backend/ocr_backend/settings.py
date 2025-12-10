@@ -117,6 +117,13 @@ USE_I18N = True
 
 USE_TZ = True
 
+EMAIL_BACKEND="django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST="smtp.gmail.com"
+EMAIL_USE_TLS=True
+EMAIL_PORT=587
+EMAIL_HOST_USER=os.getenv('SMTP_USER')
+EMAIL_HOST_PASSWORD=os.getenv('SMTP_PASS')
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
@@ -127,24 +134,6 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# import cloudinary
-# import cloudinary.uploader
-# import cloudinary.api
-
-# CLOUDINARY_CLOUD_NAME = os.getenv('CLOUDINARY_CLOUD_NAME')
-# CLOUDINARY_API_KEY = os.getenv('CLOUDINARY_API_KEY')
-# CLOUDINARY_API_SECRET = os.getenv('CLOUDINARY_API_SECRET')
-
-# cloudinary.config(
-#     cloud_name=CLOUDINARY_CLOUD_NAME,
-#     api_key=CLOUDINARY_API_KEY,
-#     api_secret=CLOUDINARY_API_SECRET,
-#     secure=True
-# )
-
-# DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
-# # MEDIA_URL = '/'
 
 STORAGES = {
     "staticfiles": {
