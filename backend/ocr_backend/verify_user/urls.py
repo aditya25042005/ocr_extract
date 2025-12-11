@@ -7,5 +7,6 @@ urlpatterns = [
     path('verify-otp/',verify_otp),
     path("aadhar/ocr/", aadhar_ocr_view),
     path("handwritten/ocr/", handwritten_ocr_view),
-    path("verify-documents/", DocumentVerifyView.as_view(), name="verify-documents")
+    path("verify-documents/", DocumentVerifyView.as_view(), name="verify-documents"),
+    path("aadhaar-detect/", AadharDetectView,name="is-valid-aadhar"),
 ]
