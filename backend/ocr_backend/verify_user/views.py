@@ -208,3 +208,19 @@ def AadharDetectView(request):
         "is_aadhaar": result,
         "message": "Aadhaar Card ✓" if result else "NOT Aadhaar Card ✗"
     })
+
+@api_view(['POST'])
+def quality_score_view(request):
+    from ML.quality_score import process_uploaded_file, calc_scores
+
+    file = request.FILES.get("file")
+    if not file:
+        return Response({"error": "Upload a file"}, status=400)
+
+    try:
+        image = process_uploaded_file(file)
+        result = calc_scores(image)
+        return Response(result)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)

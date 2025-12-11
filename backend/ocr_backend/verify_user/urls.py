@@ -9,4 +9,5 @@ urlpatterns = [
     path("handwritten/ocr/", handwritten_ocr_view),
     path("verify-documents/", DocumentVerifyView.as_view(), name="verify-documents"),
     path("aadhaar-detect/", AadharDetectView,name="is-valid-aadhar"),
+    path("quality-score/", quality_score_view),
 ]
