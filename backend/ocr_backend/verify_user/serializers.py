@@ -13,3 +13,12 @@ class OTPVerifySerializer(serializers.Serializer):
     email=serializers.EmailField()
     otp=serializers.CharField(max_length=6)
 
+class DocumentVerifySerializer(serializers.Serializer):
+    first_name=serializers.CharField()
+    middle_name=serializers.CharField(required=False,allow_null=True,allow_blank=True)
+    last_name = serializers.CharField()
+    gender = serializers.CharField()
+    dob = serializers.CharField()
+
+    birth_doc = serializers.FileField()
+    id_doc = serializers.FileField()
