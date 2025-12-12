@@ -22,13 +22,13 @@ class DocumentVerifySerializer(serializers.Serializer):
     dob = serializers.CharField()
 
     # --- Address Fields (ALL REQUIRED) ---
-    address_line = serializers.CharField()
-    city = serializers.CharField()
-    state = serializers.CharField()
-    pincode = serializers.CharField()
-    country = serializers.CharField()
+    permanent_address_line = serializers.CharField()
+    permanent_city = serializers.CharField()
+    permanent_state = serializers.CharField()
+    permanent_pincode = serializers.CharField()
+    permanent_country = serializers.CharField()
 
     # --- Documents (3 required docs) ---
     dob_proof = serializers.FileField()
-    id_proof = serializers.FileField()
+    name_gender_proof= serializers.FileField()
     address_proof = serializers.FileField()

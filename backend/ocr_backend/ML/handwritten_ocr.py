@@ -25,20 +25,15 @@ print(f"Running on: {device.upper()}")
 # MODEL_CACHE = "/Users/adityagupta/Desktop/Coding/MosipBackend/ocr_extract/backend/ocr_backend/ML/model_cache/models--microsoft--trocr-large-handwritten/snapshots/e68501f437cd2587ae5d68ee457964cac824ddee"
 
 #FOR KARN
-# MODEL_CACHE = r"C:\Users\adity\Downloads\backend_ocr\ocr_extract\backend\ocr_backend\ML\model_cache\models--microsoft--trocr-large-handwritten\snapshots\e68501f437cd2587ae5d68ee457964cac824ddee"
+MODEL_CACHE = r"C:\Users\adity\Downloads\backend_ocr\ocr_extract\backend\ocr_backend\ML\model_cache\models--microsoft--trocr-large-handwritten\snapshots\e68501f437cd2587ae5d68ee457964cac824ddee"
 
-# processor = TrOCRProcessor.from_pretrained(MODEL_CACHE, local_files_only=True)
-# model = VisionEncoderDecoderModel.from_pretrained(MODEL_CACHE, local_files_only=True).to(device)
+processor = TrOCRProcessor.from_pretrained(MODEL_CACHE, local_files_only=True)
+model = VisionEncoderDecoderModel.from_pretrained(MODEL_CACHE, local_files_only=True).to(device)
 
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-snapshots_root = BASE_DIR / "ML" / "model_cache" / "models--microsoft--trocr-large-handwritten" / "snapshots"
-MODEL_CACHE = next(snapshots_root.iterdir())  # autodetect snapshot folder
-
-processor = TrOCRProcessor.from_pretrained(str(MODEL_CACHE), local_files_only=True)
-model = VisionEncoderDecoderModel.from_pretrained(str(MODEL_CACHE), local_files_only=True).to(device)
 
 
 print("Loading GLiNER model...")

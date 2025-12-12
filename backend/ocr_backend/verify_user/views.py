@@ -366,6 +366,7 @@ class DocumentVerifyView(APIView):
         from .serializers import DocumentVerifySerializer
 
         serializer = DocumentVerifySerializer(data=request.data)
+        
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -384,7 +385,7 @@ class DocumentVerifyView(APIView):
         # ---------------------------
         # Save ID Proof Document
         # ---------------------------
-        id_file = data["id_proof"]
+        id_file = data["name_gender_proof"]
         id_ext = os.path.splitext(id_file.name)[1] or ".pdf"
 
         with tempfile.NamedTemporaryFile(delete=False, suffix=id_ext) as tmp:
@@ -410,11 +411,11 @@ class DocumentVerifyView(APIView):
             "last_name": data["last_name"],
             "gender": data["gender"],
             "dob": data["dob"],
-            "address_line": data["address_line"],
-            "city": data["city"],
-            "state": data["state"],
-            "pincode": data["pincode"],
-            "country": data["country"],
+            "address_line": data["permanent_address_line"],
+            "city": data["permanent_city"],
+            "state": data["permanent_state"],
+            "pincode": data["permanent_pincode"],
+            "country": data["permanent_country"],
         }
 
         try:
