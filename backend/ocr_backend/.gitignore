@@ -31,3 +31,10 @@ ML/model_cache/
 ML/model_cache/**
 *.bin
 *.safetensors
+
+./backend/.venv
+
+**/.venv/
+./frontend/reg_from/node_modules
+
+./frontend/reg_from2/node_modules
