@@ -24,6 +24,9 @@ print(f"Running on: {device.upper()}")
 
 # MODEL_CACHE = "/Users/adityagupta/Desktop/Coding/MosipBackend/ocr_extract/backend/ocr_backend/ML/model_cache/models--microsoft--trocr-large-handwritten/snapshots/e68501f437cd2587ae5d68ee457964cac824ddee"
 
+#FOR KARN
+# MODEL_CACHE = r"C:\Users\adity\Downloads\backend_ocr\ocr_extract\backend\ocr_backend\ML\model_cache\models--microsoft--trocr-large-handwritten\snapshots\e68501f437cd2587ae5d68ee457964cac824ddee"
+
 # processor = TrOCRProcessor.from_pretrained(MODEL_CACHE, local_files_only=True)
 # model = VisionEncoderDecoderModel.from_pretrained(MODEL_CACHE, local_files_only=True).to(device)
 

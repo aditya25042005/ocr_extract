@@ -24,10 +24,17 @@ from thefuzz import fuzz
 USE_GPU = torch.cuda.is_available()
 device = "cuda" if USE_GPU else "cpu"
 
+#FOR MAC
 # # Load TrOCR (LOCAL ONLY, no download)
 # TROCR_PATH = "/Users/adityagupta/Desktop/Coding/MosipBackend/ocr_extract/backend/ocr_backend/ML/model_cache/models--microsoft--trocr-large-handwritten/snapshots/e68501f437cd2587ae5d68ee457964cac824ddee"   # ← update this
+
+#FOR KARN
+# TROCR_PATH = "C:\Users\adity\Downloads\backend_ocr\ocr_extract\backend\ocr_backend\ML\model_cache\models--microsoft--trocr-large-handwritten\snapshots\e68501f437cd2587ae5d68ee457964cac824ddee"
+
 # processor = TrOCRProcessor.from_pretrained(TROCR_PATH, local_files_only=True)
 # trocr_model = VisionEncoderDecoderModel.from_pretrained(TROCR_PATH, local_files_only=True).to(device)
+
+
 from pathlib import Path
 from django.conf import settings  # import BASE_DIR from settings
 
