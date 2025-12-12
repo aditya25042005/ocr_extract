@@ -14,11 +14,21 @@ class OTPVerifySerializer(serializers.Serializer):
     otp=serializers.CharField(max_length=6)
 
 class DocumentVerifySerializer(serializers.Serializer):
-    first_name=serializers.CharField()
-    middle_name=serializers.CharField(required=False,allow_null=True,allow_blank=True)
+    # --- Personal Details ---
+    first_name = serializers.CharField()
+    middle_name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     last_name = serializers.CharField()
     gender = serializers.CharField()
     dob = serializers.CharField()
 
-    birth_doc = serializers.FileField()
-    id_doc = serializers.FileField()
+    # --- Address Fields (ALL REQUIRED) ---
+    address_line = serializers.CharField()
+    city = serializers.CharField()
+    state = serializers.CharField()
+    pincode = serializers.CharField()
+    country = serializers.CharField()
+
+    # --- Documents (3 required docs) ---
+    dob_proof = serializers.FileField()
+    id_proof = serializers.FileField()
+    address_proof = serializers.FileField()

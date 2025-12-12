@@ -1,179 +1,248 @@
 import os
 import re
 import cv2
-import torch
 import numpy as np
-from PIL import Image
 from pdf2image import convert_from_path
-
-# ---- LOAD MODELS (LOCAL, LIGHTWEIGHT) ----
-from craft_text_detector import (
-    load_craftnet_model,
-    load_refinenet_model,
-    get_prediction
-)
-
-from transformers import TrOCRProcessor, VisionEncoderDecoderModel
 from thefuzz import fuzz
+from paddleocr import PaddleOCR
 
 
-# -------------------------------
-#      MODEL INITIALIZATION
-# -------------------------------
+# ----------------------------------------------------
+# CONFIG
+# ----------------------------------------------------
+STOP_KEYWORDS = [
+    "date of issue", "valid", "valid upto", "valid up to", "dob", "blood",
+    "mobile", "phone", "email", "nationality", "document", "license"
+]
 
-USE_GPU = torch.cuda.is_available()
-device = "cuda" if USE_GPU else "cpu"
-
-#FOR MAC
-# # Load TrOCR (LOCAL ONLY, no download)
-# TROCR_PATH = "/Users/adityagupta/Desktop/Coding/MosipBackend/ocr_extract/backend/ocr_backend/ML/model_cache/models--microsoft--trocr-large-handwritten/snapshots/e68501f437cd2587ae5d68ee457964cac824ddee"   # ← update this
-
-#FOR KARN
-# TROCR_PATH = "C:\Users\adity\Downloads\backend_ocr\ocr_extract\backend\ocr_backend\ML\model_cache\models--microsoft--trocr-large-handwritten\snapshots\e68501f437cd2587ae5d68ee457964cac824ddee"
-
-# processor = TrOCRProcessor.from_pretrained(TROCR_PATH, local_files_only=True)
-# trocr_model = VisionEncoderDecoderModel.from_pretrained(TROCR_PATH, local_files_only=True).to(device)
-
-
-from pathlib import Path
-from django.conf import settings  # import BASE_DIR from settings
-
-# Use BASE_DIR from settings.py
-BASE_DIR = settings.BASE_DIR
-
-# Auto-detect the snapshot folder
-snapshots_root = BASE_DIR / "ML" / "model_cache" / "models--microsoft--trocr-large-handwritten" / "snapshots"
-TROCR_PATH = next(snapshots_root.iterdir())   # dynamic snapshot directory
-
-processor = TrOCRProcessor.from_pretrained(str(TROCR_PATH), local_files_only=True)
-trocr_model = VisionEncoderDecoderModel.from_pretrained(str(TROCR_PATH), local_files_only=True).to(device)
+INDIAN_STATES = [
+    "andhra pradesh", "arunachal pradesh", "assam", "bihar", "chhattisgarh",
+    "goa", "gujarat", "haryana", "himachal pradesh", "jammu and kashmir",
+    "jharkhand", "karnataka", "kerala", "madhya pradesh", "maharashtra",
+    "manipur", "meghalaya", "mizoram", "nagaland", "odisha", "punjab",
+    "rajasthan", "sikkim", "tamil nadu", "telangana", "tripura",
+    "uttar pradesh", "uttarakhand", "west bengal", "delhi", "puducherry"
+]
 
 
-# Load CRAFT text detector
-craft_net = load_craftnet_model(cuda=USE_GPU)
-refine_net = load_refinenet_model(cuda=USE_GPU)
+# ----------------------------------------------------
+# HELPER FUNCTIONS
+# ----------------------------------------------------
+def normalize(text: str) -> str:
+    if not text:
+        return ""
+    text = text.lower()
+    text = re.sub(r"[^a-z0-9 ,\-\/]", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
 
 
-# -------------------------------
-#      HELPER FUNCTIONS
-# -------------------------------
+def extract_pincode(text: str):
+    match = re.search(r"\b\d{6}\b", text)
+    return match.group(0) if match else None
+
 
 def load_image(file_path):
     ext = os.path.splitext(file_path)[1].lower()
 
     if ext == ".pdf":
         pages = convert_from_path(file_path, dpi=300)
-        if len(pages) == 0:
-            raise ValueError("PDF contains no pages")
-        return np.array(pages[0].convert("RGB"))
+        pil_img = pages[0]  # FIRST PAGE ONLY
+        return cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
 
-    # handle cases where extension is wrong (e.g., a pdf saved as .jpg)
-    try:
-        return np.array(Image.open(file_path).convert("RGB"))
-    except:
-        # attempt PDF fallback
-        try:
-            pages = convert_from_path(file_path, dpi=300)
-            return np.array(pages[0].convert("RGB"))
-        except Exception:
-            raise ValueError(f"Unsupported or corrupted image/PDF: {file_path}")
+    img = cv2.imread(file_path)
+    return img
 
 
+# ----------------------------------------------------
+# ADDRESS PARSER (PRODUCTION-GRADE)
+# ----------------------------------------------------
+class AddressParser:
+    def __init__(self, city_list=None):
+        # You can load a 5000-city CSV here. For now, minimal list:
+        self.cities = [
+            "kochi", "kottayam", "kollam", "alappuzha", "ernakulam",
+            "thrissur", "palakkad", "malappuram", "kannur", "kasaragod",
+            "wayanad", "idukki", "calicut", "kozhikode"
+        ]
 
-def detect_text_lines(image_rgb):
-    """Detect text bounding boxes using CRAFT."""
-    preds = get_prediction(
-        image=image_rgb,
-        craft_net=craft_net,
-        refine_net=refine_net,
-        text_threshold=0.5,
-        link_threshold=0.1,
-        low_text=0.3,
-        cuda=USE_GPU
+    def find_address_block(self, lines):
+        """
+        lines = [ (box, (text, score)) ... ]
+        """
+        block = []
+
+        # 1. Find "Address:" label
+        for idx, ln in enumerate(lines):
+            txt = ln[1][0].lower()
+            if "address" in txt:
+                # include this line
+                block.append(ln)
+
+                # include following lines until STOP KEYWORD
+                for j in range(idx+1, min(idx+8, len(lines))):
+                    nxt = lines[j][1][0].lower()
+
+                    if any(stop in nxt for stop in STOP_KEYWORDS):
+                        break
+                    block.append(lines[j])
+
+                return block
+
+        # If no label found, fallback: pick first 5 lines
+        return lines[:5]
+
+    def parse(self, block, user_details):
+        """
+        block = OCR lines selected as address region
+        """
+        if not block:
+            return None
+
+        raw_text = ", ".join([ln[1][0] for ln in block])
+        norm = normalize(raw_text)
+
+        # PINCODE
+        pin = extract_pincode(raw_text)
+
+        # STATE
+        state = None
+        for st in INDIAN_STATES:
+            if st.lower() in norm:
+                state = st.title()
+                break
+
+        # CITY
+        city = None
+        for c in self.cities:
+            if c in norm:
+                city = c.title()
+                break
+
+        # COUNTRY
+        country = "India"
+
+        # ADDRESS LINE = remove city/state/pincode
+        address_line = raw_text
+        if city: address_line = re.sub(city, "", address_line, flags=re.IGNORECASE)
+        if state: address_line = re.sub(state, "", address_line, flags=re.IGNORECASE)
+        if pin: address_line = re.sub(pin, "", address_line)
+        address_line = re.sub(r"\s+", " ", address_line).strip(" ,.-")
+
+        return {
+            "raw_detected": raw_text,
+            "address_line": address_line,
+            "city": city,
+            "state": state,
+            "pincode": pin,
+            "country": country
+        }
+
+
+# ----------------------------------------------------
+# MAIN DOCUMENT VERIFIER (PaddleOCR-based)
+# ----------------------------------------------------
+class DocumentVerifier:
+    def __init__(self, poppler_path=None):
+        self.ocr = PaddleOCR(
+        use_angle_cls=True,
+        lang='en'
     )
 
-    boxes = preds["boxes"]
-    line_boxes = []
+        self.address_parser = AddressParser()
 
-    for box in boxes:
-        b = np.array(box).astype(int)
-        x1 = b[:, 0].min()
-        x2 = b[:, 0].max()
-        y1 = b[:, 1].min()
-        y2 = b[:, 1].max()
-        line_boxes.append((x1, y1, x2, y2))
+    def parse_paddle_output(self, ocr_result):
+        """
+        Standardize PaddleOCR output:
+        Returns: [ [box, (text, score)], ... ]
+        """
+        parsed = []
+        if not ocr_result:
+            return parsed
 
-    return line_boxes
+        # ocr_result = [ [ [box], (text, score) ], ... ]
+        for line in ocr_result:
+            box = line[0]
+            text, conf = line[1]
+            parsed.append([box, (text, conf)])
 
+        return parsed
 
-def recognize_text(image_rgb, box):
-    """Recognize cropped text using TrOCR."""
-    x1, y1, x2, y2 = box
-    pil_img = Image.fromarray(image_rgb[y1:y2, x1:x2])
-
-    pixel_values = processor(images=pil_img, return_tensors="pt").pixel_values.to(device)
-
-    with torch.no_grad():
-        outputs = trocr_model.generate(pixel_values)
-        text = processor.batch_decode(outputs, skip_special_tokens=True)[0]
-
-    return text.strip()
-
-
-# -------------------------------
-#    MAIN VERIFICATION CLASS
-# -------------------------------
-
-class DocumentVerifier:
-
-    def extract_text_entries(self, file_path):
-        """Extracts full OCR list: [{text, box}]"""
+    def extract_text_lines(self, file_path):
         img = load_image(file_path)
-        boxes = detect_text_lines(img)
+        if img is None: 
+            return []
 
-        results = []
-        for box in boxes:
-            text = recognize_text(img, box)
-            if len(text.strip()) > 0:
-                results.append({"text": text, "box": box})
+        ocr_data = self.ocr.ocr(img)
+        return self.parse_paddle_output(ocr_data)
 
-        return results
-
-    def find_match(self, entries, target):
+    # --------------------------------------------------------
+    # FIELD MATCHERS
+    # --------------------------------------------------------
+    def find_match(self, lines, target, threshold=60):
         if not target:
             return None
 
-        t = target.lower().strip()
+        target = normalize(target)
         best = None
-        high = 0
+        best_score = 0
 
-        for e in entries:
-            score = fuzz.token_set_ratio(t, e["text"].lower())
-            if score > high:
-                high = score
+        for ln in lines:
+            txt = normalize(ln[1][0])
+            score = fuzz.token_set_ratio(txt, target)
+
+            if score > best_score:
+                best_score = score
                 best = {
-                    "detected_text": e["text"],
-                    "coordinates": e["box"],
-                    "match_score": score,
+                    "detected_text": ln[1][0],
+                    "coordinates": ln[0],
+                    "match_score": score
                 }
 
-        return best if high >= 60 else None
+        return best if best_score >= threshold else None
 
-    def verify(self, birth_doc_path, id_doc_path, user):
-        report = {}
+    # --------------------------------------------------------
+    # GENDER SPECIAL HANDLING
+    # --------------------------------------------------------
+    def detect_gender(self, lines, target_gender):
+        if not target_gender:
+            return None
+        target_gender = target_gender.lower()
 
-        # Extract text from docs
-        birth_entries = self.extract_text_entries(birth_doc_path)
-        id_entries = self.extract_text_entries(id_doc_path)
+        for ln in lines:
+            txt = ln[1][0].lower()
+            if "gender" in txt or "sex" in txt:
+                if target_gender in txt:
+                    return {
+                        "coordinates": ln[0],
+                        "detected_text": ln[1][0],
+                        "match_score": 100
+                    }
+        # fallback
+        return self.find_match(lines, target_gender)
 
-        # DOB
-        report["date_of_birth"] = self.find_match(birth_entries, user.get("dob"))
+    # --------------------------------------------------------
+    # MAIN VERIFY FUNCTION
+    # --------------------------------------------------------
+    def verify_documents(self, dob_path, id_path, address_path, user):
+        result = {}
 
-        # Name fields
-        for field in ["first_name", "middle_name", "last_name"]:
-            report[field] = self.find_match(id_entries, user.get(field))
+        # ---- DOB PROOF ----
+        dob_lines = self.extract_text_lines(dob_path)
+        result["date_of_birth"] = self.find_match(dob_lines, user["dob"])
 
-        # Gender
-        report["gender"] = self.find_match(id_entries, user.get("gender"))
+        # ---- ID PROOF ----
+        id_lines = self.extract_text_lines(id_path)
+        result["first_name"] = self.find_match(id_lines, user["first_name"])
+        result["middle_name"] = self.find_match(id_lines, user.get("middle_name", ""))
+        result["last_name"] = self.find_match(id_lines, user["last_name"])
+        result["gender"] = self.detect_gender(id_lines, user["gender"])
 
-        return report
+        # ---- ADDRESS PROOF ----
+        addr_lines = self.extract_text_lines(address_path)
+        addr_block = self.address_parser.find_address_block(addr_lines)
+        parsed_addr = self.address_parser.parse(addr_block, user)
+
+        result["address"] = parsed_addr
+
+        return result

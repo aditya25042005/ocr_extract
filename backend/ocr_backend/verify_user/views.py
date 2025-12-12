@@ -371,39 +371,66 @@ class DocumentVerifyView(APIView):
 
         data = serializer.validated_data
 
-        # Save birth_doc
-        birth_doc = data["birth_doc"]
-        birth_ext = os.path.splitext(birth_doc.name)[1] or ".pdf"
+        # ---------------------------
+        # Save DOB Proof Document
+        # ---------------------------
+        dob_file = data["dob_proof"]
+        dob_ext = os.path.splitext(dob_file.name)[1] or ".pdf"
 
-        with tempfile.NamedTemporaryFile(delete=False, suffix=birth_ext) as birth_temp:
-            birth_temp.write(birth_doc.read())
-            birth_path = birth_temp.name
+        with tempfile.NamedTemporaryFile(delete=False, suffix=dob_ext) as tmp:
+            tmp.write(dob_file.read())
+            dob_path = tmp.name
 
-        # Save id_doc
-        id_doc = data["id_doc"]
-        id_ext = os.path.splitext(id_doc.name)[1] or ".pdf"
+        # ---------------------------
+        # Save ID Proof Document
+        # ---------------------------
+        id_file = data["id_proof"]
+        id_ext = os.path.splitext(id_file.name)[1] or ".pdf"
 
-        with tempfile.NamedTemporaryFile(delete=False, suffix=id_ext) as id_temp:
-            id_temp.write(id_doc.read())
-            id_path = id_temp.name
+        with tempfile.NamedTemporaryFile(delete=False, suffix=id_ext) as tmp:
+            tmp.write(id_file.read())
+            id_path = tmp.name
 
-        # User details dict
+        # ---------------------------
+        # Save Address Proof Document
+        # ---------------------------
+        address_file = data["address_proof"]
+        address_ext = os.path.splitext(address_file.name)[1] or ".pdf"
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix=address_ext) as tmp:
+            tmp.write(address_file.read())
+            address_path = tmp.name
+
+        # ---------------------------
+        # User details dictionary
+        # ---------------------------
         user_details = {
             "first_name": data["first_name"],
             "middle_name": data.get("middle_name", ""),
             "last_name": data["last_name"],
             "gender": data["gender"],
             "dob": data["dob"],
+            "address_line": data["address_line"],
+            "city": data["city"],
+            "state": data["state"],
+            "pincode": data["pincode"],
+            "country": data["country"],
         }
 
         try:
             verifier = DocumentVerifier()
-            result = verifier.verify(birth_path, id_path, user_details)
+            result = verifier.verify_documents(
+                dob_path,
+                id_path,
+                address_path,
+                user_details
+            )
 
             return Response(
                 {"status": "success", "verification_result": result},
                 status=status.HTTP_200_OK,
             )
+
         except Exception as e:
             return Response(
                 {"status": "error", "message": str(e)},
