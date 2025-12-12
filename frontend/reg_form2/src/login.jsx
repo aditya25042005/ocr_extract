@@ -8,8 +8,51 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "./components/ui/input-otp"
+import { useRef } from 'react';
+import api from './api';
 
 function Login() {
+  let  [email, setEmail ] = useState('');
+  let  [otp, setotp ] = useState('');
+
+  const otp_check = useRef(null);
+
+  function otp_button(){
+    if(otp_check.current.innerText==="Verify & Proceed"){
+          api.post('api/verify-otp/', {
+        'email':email,
+        'otp':otp
+  })
+  .then(function (response) {
+   
+  })
+  .catch(function (error) {
+    console.log(error);
+  });
+
+
+    }
+    else{
+    otp_check.current.innerText = "Proceesing";
+      //try catch vs then
+      api.post('api/send-otp/', {
+        'email':email
+   
+  })
+  .then(function (response) {
+    console.log(response);
+    if(response.status===200){
+      otp_check.current.innerText = "Verify & Proceed";
+    }
+    else{
+      otp_check.current.innerText = "Send OTP";
+    }
+  })
+  .catch(function (error) {
+    console.log(error);
+  });
+    }
+  }
   return (
     <>
       <div className="ui">
@@ -53,7 +96,7 @@ function Login() {
              <Mail size={18} style={{marginRight: '8px', verticalAlign: 'middle'}}/>
              Email Address
           </div>
-          <Input type='email' placeholder="e.g. citizen@passport.gov.in" className="login-email box-part2" />
+          <Input type='email' placeholder="e.g. karn@gmail.com" className="login-email box-part2"  onChange={(e)=>{setEmail(e.target.value)}} />
           <p className="input-hint">We'll send a 6-digit code to this email.</p>
         </div>
 
@@ -62,7 +105,7 @@ function Login() {
              <Lock size={18} style={{marginRight: '80px', verticalAlign: 'middle'}}/>
              Enter OTP
           </div>
-          <InputOTP maxLength={6} className="box-part2">
+          <InputOTP maxLength={6} className="box-part2"  onChange={(value)=>{setotp(value)}}>
             <InputOTPGroup>
               <InputOTPSlot index={0} />
               <InputOTPSlot index={1} />
@@ -74,7 +117,8 @@ function Login() {
           </InputOTP>
         </div>
 
-        <button className='login-button'>Verify & Proceed</button>
+        <button className='login-button' ref={otp_check} onClick={()=>{otp_button()}}>Send OTP</button>
+        Verify & Proceed
 
         {/* NEW: Footer Links */}
         <div className="box-footer">

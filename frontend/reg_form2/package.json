@@ -20,6 +20,7 @@
     "@tailwindcss/vite": "^4.1.17",
     "@tsparticles/react": "^3.0.0",
     "@tsparticles/slim": "^3.9.1",
+    "axios": "^1.13.2",
     "clsx": "^2.1.1",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.556.0",
