@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtualenv
+venv/
+env/
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+media/
+staticfiles/
+
+# Environment
+.env
+.env.*
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# ML MODELS — ignore large files
+ML/model_cache/
+ML/model_cache/**
+*.bin
+*.safetensors
+
+./backend/.venv
+
+**/.venv/
+./frontend/reg_from/node_modules
+
+./frontend/reg_from2/node_modules
