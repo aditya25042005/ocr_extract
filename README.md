@@ -4,7 +4,7 @@ This guide provides an overview of the key features of the document intelligence
 
 ### ✨ Key Features of the Document Intelligence System
 
-The project is a MOSIP-aligned backend system for OCR-based text extraction and document verification, developed as part of a hackathon challenge. It serves as a pre-registration/document intelligence layer, following MOSIP architectural principles.
+The project is a MOSIP-aligned backend system for OCR-based text extraction and document verification. It serves as a pre-registration/document intelligence layer, following MOSIP architectural principles.
 
 | Feature Category | Feature Name | Description |
 | :--- | :--- | :--- |
