@@ -7,6 +7,10 @@ GENDER_CHOICES=(
     ('F','Female'),
     ('O','Other'),
 )
+STATUS_CHOICE=(
+    ('PENDING','pending'),
+    ('VERIFIED','verified')
+)
 class PassportRecord(models.Model):
     first_name=models.CharField(max_length=100)
     middle_name=models.CharField(max_length=100,blank=True)
@@ -17,16 +21,14 @@ class PassportRecord(models.Model):
     phone=models.CharField(max_length=10)
     email=models.EmailField()
     #present address
-    present_address_line1=models.CharField(max_length=255)
-    present_address_line2=models.CharField(max_length=255,blank=True)
+    present_address=models.CharField(max_length=500)
     present_city=models.CharField(max_length=255)
     present_state=models.CharField(max_length=100)
     present_pincode=models.CharField(max_length=10)
     present_country=models.CharField(max_length=100, default="India")
     #permanent address
     permanent_address_same_as_present=models.BooleanField(default=False)
-    permanent_address_line1=models.CharField(max_length=255, blank=True)
-    permanent_address_line2=models.CharField(max_length=255, blank=True)
+    permanent_address=models.CharField(max_length=500, blank=True)
     permanent_city=models.CharField(max_length=100, blank=True)
     permanent_state=models.CharField(max_length=100, blank=True)
     permanent_pincode=models.CharField(max_length=10, blank=True)
@@ -35,6 +37,8 @@ class PassportRecord(models.Model):
     name_gender_proof=models.FileField(upload_to="name_gender_proof/")
     dob_proof=models.FileField(upload_to="dob_proofs/")
     address_proof = models.FileField(upload_to="address_proofs/")
+
+    status=models.CharField(max_length=10,choices=STATUS_CHOICE,default='PENDING')
     
     # raw OCR output
     extracted_data = models.JSONField(blank=True, null=True)       

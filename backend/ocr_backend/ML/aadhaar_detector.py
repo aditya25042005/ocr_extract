@@ -1,40 +1,73 @@
 import os
+import uuid
 from ultralytics import YOLO
 from pdf2image import convert_from_path
+from PIL import Image
 
+# ---------------------------------------------------------
+# Load YOLO model ONCE (important for performance)
+# ---------------------------------------------------------
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "model_cache/best.pt")
 model = YOLO(MODEL_PATH)
 
-REQUIRED_CLASSES = {0, 1, 2, 3}
-
-def run_yolo(image_path, min_conf=0.5):
-    results = model.predict(image_path)[0]
-    detected = []
-
-    for box in results.boxes:
-        if box.conf[0] >= min_conf:
-            detected.append(int(box.cls[0]))
-
-    return REQUIRED_CLASSES.issubset(detected)
+# Confidence threshold (balanced for recall)
+YOLO_CONF = 0.45
+YOLO_IMGSZ = 640
 
 
-def is_aadhaar(path):
-    path = str(path)
+# ---------------------------------------------------------
+# YOLO inference on a single image
+# ---------------------------------------------------------
+def _detect_aadhaar_in_image(image_path: str) -> bool:
+    """
+    Returns True if YOLO detects *any* Aadhaar-related object.
+    """
+    results = model.predict(
+        source=image_path,
+        conf=YOLO_CONF,
+        imgsz=YOLO_IMGSZ,
+        verbose=False
+    )[0]
 
-    # Case 1: Image file
-    if path.lower().endswith((".jpg", ".jpeg", ".png")):
-        return run_yolo(path)
+    # If model predicts at least one box → Aadhaar detected
+    return results.boxes is not None and len(results.boxes) > 0
 
-    # Case 2: PDF file
-    elif path.lower().endswith(".pdf"):
-        pages = convert_from_path(path)
-        for i, page in enumerate(pages):
-            temp = f"/tmp/page_{i}.jpg"
-            page.save(temp, "JPEG")
 
-            if run_yolo(temp):
-                return True
+# ---------------------------------------------------------
+# Public function used by Django view
+# ---------------------------------------------------------
+def is_aadhaar(file_path: str) -> bool:
+    """
+    Detect Aadhaar card from image or PDF.
+    """
+
+    file_path = str(file_path).lower()
+
+    # ---------------- IMAGE ----------------
+    if file_path.endswith((".jpg", ".jpeg", ".png")):
+        return _detect_aadhaar_in_image(file_path)
+
+    # ---------------- PDF ------------------
+    if file_path.endswith(".pdf"):
+        try:
+            pages = convert_from_path(file_path, dpi=300)
+        except Exception:
+            # PDF unreadable
+            return False
+
+        for page in pages:
+            temp_img = f"/tmp/aadhaar_{uuid.uuid4().hex}.jpg"
+            page.save(temp_img, "JPEG")
+
+            try:
+                if _detect_aadhaar_in_image(temp_img):
+                    return True
+            finally:
+                # Cleanup temp file
+                if os.path.exists(temp_img):
+                    os.remove(temp_img)
 
         return False
 
+    # Unsupported file type
     return False

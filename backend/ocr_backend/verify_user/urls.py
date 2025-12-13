@@ -3,6 +3,9 @@ from .views import *
 
 urlpatterns = [
     path('passport/create/',PassportRecordCreateView.as_view(),name='passport-create'),
+    path('passport/ids/',passport_ids_view,name='passport-ids'),
+    path('passport/<int:id>/toggle-status/',update_passport_status),
+    path('passport/<int:id>/',PassportRecordDetailView.as_view(),name='passport-detail'),
     path('send-otp/',send_otp),
     path('verify-otp/',verify_otp),
     path("aadhar/ocr/", aadhar_ocr_view),
