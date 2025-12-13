@@ -276,7 +276,7 @@ class PassportRecordDetailView(RetrieveAPIView):
 @api_view(['PATCH'])
 def update_passport_status(req,id):
     new_status=req.data.get('status')
-    if new_status not in ['PENDING','VERIFIED']:
+    if new_status not in ['REJECTED','VERIFIED','PENDING']:
         return Response ({"error":"Invalid Status"},status=400)
     record=get_object_or_404(PassportRecord,id=id)
     record.status=new_status

@@ -2,17 +2,20 @@ import os
 import re
 import cv2
 import numpy as np
-import logging  # <--- Added logging
+import json
 from pdf2image import convert_from_path
 from thefuzz import fuzz
 from paddleocr import PaddleOCR
 
-# Configure Logging
-logging.basicConfig(level=logging.ERROR, format='%(asctime)s - %(levelname)s - %(message)s')
+# ----------------------------------------------------
+# CONFIGURATION
+# ----------------------------------------------------
+# Bypass Paddle's network check
+os.environ['DISABLE_MODEL_SOURCE_CHECK'] = 'True'
 
-# ----------------------------------------------------
-# CONFIG
-# ----------------------------------------------------
+# Update this path to your local Poppler bin directory
+POPPLER_PATH = r'C:\Users\adity\Downloads\Release-25.12.0-0\poppler-25.12.0\Library\bin'
+
 STOP_KEYWORDS = [
     "date of issue", "valid", "valid upto", "valid up to", "dob", "blood",
     "mobile", "phone", "email", "nationality", "document", "license"
@@ -27,7 +30,6 @@ INDIAN_STATES = [
     "uttar pradesh", "uttarakhand", "west bengal", "delhi", "puducherry"
 ]
 
-
 # ----------------------------------------------------
 # HELPER FUNCTIONS
 # ----------------------------------------------------
@@ -39,10 +41,8 @@ def normalize(text: str) -> str:
         text = re.sub(r"[^a-z0-9 ,\-\/]", " ", text)
         text = re.sub(r"\s+", " ", text).strip()
         return text
-    except Exception as e:
-        logging.error(f"Error normalizing text: {e}")
+    except Exception:
         return ""
-
 
 def extract_pincode(text: str):
     try:
@@ -51,57 +51,57 @@ def extract_pincode(text: str):
     except Exception:
         return None
 
-
 def load_image(file_path):
     """
     Safely loads an image or converts PDF to Image.
+    Returns a BGR numpy array compatible with OpenCV/PaddleOCR.
     """
     try:
         if not os.path.exists(file_path):
-            logging.error(f"File not found: {file_path}")
+            print(f"File not found: {file_path}")
             return None
 
         ext = os.path.splitext(file_path)[1].lower()
 
         if ext == ".pdf":
             try:
-                # Update this path if needed
-                POPPLER_PATH = r'C:\Users\adity\Downloads\Release-25.12.0-0\poppler-25.12.0\Library\bin'
-                
                 pages = convert_from_path(file_path, dpi=300, poppler_path=POPPLER_PATH)
                 if not pages:
-                    logging.error("PDF converted but no pages found.")
+                    print("PDF converted but no pages found.")
                     return None
                 
-                pil_img = pages[0]  # FIRST PAGE ONLY
+                pil_img = pages[0]
                 return cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
             except Exception as e:
-                logging.error(f"PDF Conversion Failed for {file_path}: {e}")
+                print(f"PDF Conversion Failed for {file_path}: {e}")
                 return None
 
-        # Standard Image Load
         img = cv2.imread(file_path)
         if img is None:
-            logging.error(f"cv2 failed to read image: {file_path}")
+            print(f"cv2 failed to read image: {file_path}")
         return img
 
     except Exception as e:
-        logging.error(f"Unexpected error in load_image: {e}")
+        print(f"Unexpected error in load_image: {e}")
         return None
 
-
 # ----------------------------------------------------
-# ADDRESS PARSER (PRODUCTION-GRADE)
+# ADDRESS PARSER
 # ----------------------------------------------------
 class AddressParser:
-    def __init__(self, city_list=None):
+    def __init__(self):
         self.cities = [
             "kochi", "kottayam", "kollam", "alappuzha", "ernakulam",
             "thrissur", "palakkad", "malappuram", "kannur", "kasaragod",
-            "wayanad", "idukki", "calicut", "kozhikode"
+            "wayanad", "idukki", "calicut", "kozhikode", "mumbai", "delhi", 
+            "bangalore", "chennai", "kolkata", "hyderabad", "pune"
         ]
 
     def find_address_block(self, lines):
+        """
+        Scans lines to identify the block of text corresponding to an address.
+        lines input format: [[x1, x2, y1, y2], (text, score)]
+        """
         try:
             block = []
             if not lines:
@@ -110,9 +110,10 @@ class AddressParser:
             # 1. Find "Address:" label
             for idx, ln in enumerate(lines):
                 txt = ln[1][0].lower()
+                
                 if "address" in txt:
                     block.append(ln)
-                    # include following lines until STOP KEYWORD
+                    # include following lines until STOP KEYWORD or max 8 lines
                     for j in range(idx+1, min(idx+8, len(lines))):
                         nxt = lines[j][1][0].lower()
                         if any(stop in nxt for stop in STOP_KEYWORDS):
@@ -122,8 +123,7 @@ class AddressParser:
 
             # If no label found, fallback: pick first 5 lines
             return lines[:5]
-        except Exception as e:
-            logging.error(f"Error finding address block: {e}")
+        except Exception:
             return []
 
     def parse(self, block, user_details):
@@ -134,27 +134,22 @@ class AddressParser:
             raw_text = ", ".join([ln[1][0] for ln in block])
             norm = normalize(raw_text)
 
-            # PINCODE
             pin = extract_pincode(raw_text)
 
-            # STATE
             state = None
             for st in INDIAN_STATES:
                 if st.lower() in norm:
                     state = st.title()
                     break
 
-            # CITY
             city = None
             for c in self.cities:
                 if c in norm:
                     city = c.title()
                     break
 
-            # COUNTRY
             country = "India"
 
-            # ADDRESS LINE cleaning
             address_line = raw_text
             if city: address_line = re.sub(city, "", address_line, flags=re.IGNORECASE)
             if state: address_line = re.sub(state, "", address_line, flags=re.IGNORECASE)
@@ -169,33 +164,53 @@ class AddressParser:
                 "pincode": pin,
                 "country": country
             }
-        except Exception as e:
-            logging.error(f"Error parsing address text: {e}")
+        except Exception:
             return None
 
-
 # ----------------------------------------------------
-# MAIN DOCUMENT VERIFIER (PaddleOCR-based)
+# MAIN DOCUMENT VERIFIER
 # ----------------------------------------------------
 class DocumentVerifier:
-    def __init__(self, poppler_path=r'C:\Users\adity\Downloads\Release-25.12.0-0\poppler-25.12.0\Library\bin'):
+    def __init__(self):
         try:
+            # Initialize PaddleOCR
             self.ocr = PaddleOCR(use_angle_cls=True, lang='en')
             self.address_parser = AddressParser()
         except Exception as e:
-            logging.error(f"Failed to initialize PaddleOCR: {e}")
+            print(f"Failed to initialize PaddleOCR: {e}")
             self.ocr = None
-   
+    
     def parse_paddle_output(self, ocr_data):
         """
-        Parses PaddleX OCRResult object into standard format: [[box, (text, score)], ...]
-        Handles both Dictionary (PaddleX) and List (Standard) outputs.
+        Parses PaddleX OCRResult object into standard format.
+        CONVERTS Polygon points to Diagonal Format: [x1, x2, y1, y2]
+        (min_x, max_x, min_y, max_y)
         """
         parsed_lines = []
         if not ocr_data: return []
 
         result_obj = ocr_data[0]
         
+        # Helper to convert 4 points to [x1, x2, y1, y2]
+        def get_diag_coords(points):
+            try:
+                if isinstance(points, np.ndarray):
+                    points = points.tolist()
+                
+                # Extract X and Y coordinates
+                xs = [p[0] for p in points]
+                ys = [p[1] for p in points]
+                
+                x_min = int(min(xs))
+                x_max = int(max(xs))
+                y_min = int(min(ys))
+                y_max = int(max(ys))
+                
+                # STRICT FORMAT: [x1, x2, y1, y2]
+                return [x_min, x_max, y_min, y_max]
+            except Exception:
+                return points
+
         # A. PaddleX Dict Handling
         if hasattr(result_obj, 'keys') or isinstance(result_obj, dict):
             texts = result_obj.get('rec_texts', [])
@@ -203,9 +218,9 @@ class DocumentVerifier:
             scores = result_obj.get('rec_scores', [])
             
             for text, box, score in zip(texts, boxes, scores):
-                if isinstance(box, np.ndarray): box = box.tolist()
                 if isinstance(score, np.generic): score = float(score)
-                parsed_lines.append([box, (text, score)])
+                coords = get_diag_coords(box)
+                parsed_lines.append([coords, (text, score)])
                 
         # B. Standard List Handling
         elif isinstance(result_obj, list):
@@ -214,39 +229,33 @@ class DocumentVerifier:
                 box = line[0]
                 text_info = line[1]
                 
-                if isinstance(box, np.ndarray): box = box.tolist()
-                
-                parsed_lines.append([box, text_info])
+                coords = get_diag_coords(box)
+                parsed_lines.append([coords, text_info])
                 
         return parsed_lines
-        
 
-   
     def extract_text_lines(self, file_path):
         try:
             if self.ocr is None:
-                logging.error("OCR model is not initialized.")
+                print("OCR model is not initialized.")
                 return []
 
             img = load_image(file_path)
             if img is None: 
-                logging.error(f"Image load failed for {file_path}")
+                print(f"Image load failed for {file_path}")
                 return []
 
             ocr_data = self.ocr.ocr(img)
-            if not ocr_data:
-                logging.warning(f"No text detected in {file_path}")
+            if not ocr_data or ocr_data[0] is None:
+                print(f"No text detected in {file_path}")
                 return []
-            print(ocr_data)
+            
             return self.parse_paddle_output(ocr_data)
             
         except Exception as e:
-            logging.error(f"OCR Extraction failed for {file_path}: {e}")
+            print(f"OCR Extraction failed for {file_path}: {e}")
             return []
 
-    # --------------------------------------------------------
-    # FIELD MATCHERS
-    # --------------------------------------------------------
     def find_match(self, lines, target, threshold=60):
         try:
             if not target or not lines:
@@ -262,20 +271,18 @@ class DocumentVerifier:
 
                 if score > best_score:
                     best_score = score
+                    # ln[0] is already [x1, x2, y1, y2]
                     best = {
                         "detected_text": ln[1][0],
-                        "coordinates": ln[0],
-                        "match_score": score
+                        "coordinates": ln[0], 
+                        "match_score": score/100
                     }
 
             return best if best_score >= threshold else None
         except Exception as e:
-            logging.error(f"Error during field matching: {e}")
+            print(f"Error during field matching: {e}")
             return None
 
-    # --------------------------------------------------------
-    # GENDER SPECIAL HANDLING
-    # --------------------------------------------------------
     def detect_gender(self, lines, target_gender):
         try:
             if not target_gender or not lines:
@@ -284,35 +291,29 @@ class DocumentVerifier:
 
             for ln in lines:
                 txt = ln[1][0].lower()
+                # Check for label "Gender" or "Sex"
                 if "gender" in txt or "sex" in txt:
                     if target_gender in txt:
                         return {
-                            "coordinates": ln[0],
+                            "coordinates": ln[0], # [x1, x2, y1, y2]
                             "detected_text": ln[1][0],
-                            "match_score": 100
+                            "match_score": 1
                         }
-            # fallback
             return self.find_match(lines, target_gender)
         except Exception as e:
-            logging.error(f"Error detecting gender: {e}")
+            print(f"Error detecting gender: {e}")
             return None
 
-    # --------------------------------------------------------
-    # MAIN VERIFY FUNCTION
-    # --------------------------------------------------------
     def verify_documents(self, dob_path, id_path, address_path, user):
         result = {}
         try:
-            print(user)
             # ---- DOB PROOF ----
             if dob_path:
                 try:
                     dob_lines = self.extract_text_lines(dob_path)
-                    print(dob_lines)
                     result["date_of_birth"] = self.find_match(dob_lines, user.get("dob", ""))
-                    print(result)
                 except Exception as e:
-                    logging.error(f"Error verifying DOB proof: {e}")
+                    print(f"Error verifying DOB proof: {e}")
                     result["date_of_birth"] = {"error": "Processing Failed"}
 
             # ---- ID PROOF ----
@@ -324,22 +325,53 @@ class DocumentVerifier:
                     result["last_name"] = self.find_match(id_lines, user.get("last_name", ""))
                     result["gender"] = self.detect_gender(id_lines, user.get("gender", ""))
                 except Exception as e:
-                    logging.error(f"Error verifying ID proof: {e}")
+                    print(f"Error verifying ID proof: {e}")
                     result["id_proof_error"] = "Processing Failed"
 
             # ---- ADDRESS PROOF ----
             if address_path:
                 try:
                     addr_lines = self.extract_text_lines(address_path)
+                    
+                    # 1. Identify specific address block lines
                     addr_block = self.address_parser.find_address_block(addr_lines)
+                    
+                    # 2. Parse text content
                     parsed_addr = self.address_parser.parse(addr_block, user)
+                    
+                    # 3. Calculate bounding box for the WHOLE address block
+                    # Format required: [x1, x2, y1, y2] (min_x, max_x, min_y, max_y)
+                    if parsed_addr and addr_block:
+                        min_xs = []
+                        max_xs = []
+                        min_ys = []
+                        max_ys = []
+                        
+                        for line in addr_block:
+                            # line[0] is [x1, x2, y1, y2]
+                            coords = line[0]
+                            min_xs.append(coords[0]) # x1
+                            max_xs.append(coords[1]) # x2
+                            min_ys.append(coords[2]) # y1
+                            max_ys.append(coords[3]) # y2
+                        
+                        if min_xs:
+                            final_x1 = min(min_xs)
+                            final_x2 = max(max_xs)
+                            final_y1 = min(min_ys)
+                            final_y2 = max(max_ys)
+                            
+                            parsed_addr["block_coordinates"] = [final_x1, final_x2, final_y1, final_y2]
+                        else:
+                            parsed_addr["block_coordinates"] = None
+
                     result["address"] = parsed_addr
                 except Exception as e:
-                    logging.error(f"Error verifying Address proof: {e}")
+                    print(f"Error verifying Address proof: {e}")
                     result["address"] = {"error": "Processing Failed"}
 
             return result
 
         except Exception as e:
-            logging.critical(f"Critical failure in verify_documents: {e}")
+            print(f"Critical failure in verify_documents: {e}")
             return {"status": "error", "message": str(e)}
