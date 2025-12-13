@@ -1,0 +1,196 @@
+.nav-header {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 500;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  height: min(100px, 15vh);
+  justify-content: space-between;
+  padding-left: 50px;
+  padding-right: 50px;
+  margin: 0px;
+  /* Clean white header with a very faint shadow */
+  background-color: #ffffff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid #eaeaea;
+}
+
+.ui {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  pointer-events: none;
+  /* Very subtle off-white background, professional and easy on eyes */
+  background: linear-gradient(to bottom, #f8f9fa, #eef2f3);
+}
+
+.nav-title1 {
+  display: flex;
+  gap: 8px;
+  font-weight: 900;
+  justify-content: space-around;
+  margin-bottom: 10px;
+  /* Professional Navy Blue */
+  color: #1a3b5d; 
+}
+
+.nav-title2 {
+    color: #1a3b5d;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+@media screen and (max-width: 600px) {
+  .nav-header {
+    height: 100px;
+    padding-left: 0;
+    padding-right: 0;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .nav-title1 {
+    margin-bottom: 10px;
+  }
+}
+
+.p1 {
+  text-align: center;
+}
+
+.p2 {}
+
+.page-title {
+  margin-top: min(100px, 15vh);
+  font-family: "Montserrat", sans-serif;
+  font-weight: 900;
+  font-size: 16px;
+}
+
+.p1,
+.p2 {
+  margin-left: 10%;
+  margin-right: 10%;
+  margin-bottom: 30px;
+}
+
+.page-title1 {
+  font-size: 3em;
+  /* Deep Official Blue Gradient (Subtle) */
+  background: linear-gradient(90deg, #0D47A1 0%, #1976D2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.page-title2 {
+  font-size: 1.5em;
+  /* Dark Slate Grey for sub-header */
+  color: #37474f;
+}
+
+.page-title3 {
+  font-size: 1em;
+  color: #546e7a; /* Muted grey for description */
+  line-height: 1.6;
+}
+
+.features {
+  margin-left: min(30px, 5vw);
+  margin-right: min(30px, 5vw);
+  padding-left: 30px;
+  padding-right: 10px;
+  border-radius: 8px; /* Slightly sharper corners */
+  padding-block: 30px;
+  margin-block: 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  
+  /* Clean White Card */
+  background-color: #ffffff;
+  /* Very soft shadow, no bright colors */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.04); 
+  border: 1px solid #e0e0e0;
+}
+
+.border_gradient {
+  z-index: 2;
+}
+
+.feature_prop {
+  margin-bottom: 10px;
+}
+
+.feature_title {
+    font-weight: 700;
+    color: #0D47A1; /* Matching the main title */
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+}
+
+.feature_desc {
+    color: #455a64;
+}
+
+.footer {
+  padding-block: 30px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: #78909c;
+  border-top: 1px solid #eaeaea;
+}
+
+.page-title-button {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+}
+
+.button-group1 {
+    width: 200px;
+}
+
+.button-main1 {
+  /* Standard "Passport Blue" Button */
+  background: #0D47A1 !important; 
+  color: white !important;
+  font-size: 16px;
+  font-weight: 500;
+  border: none;
+  /* Tiny gradient just to give it depth, not flashiness */
+  background: linear-gradient(180deg, #1565C0 0%, #0D47A1 100%) !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+/* 1. Base Styling for the "CHECK STATUS" link */
+.check-status-link {
+  /* Inherits from the original element provided in your request */
+  font-family: Arial, sans-serif; /* Example font, adjust as needed */
+  font-size: 16px; /* Example size, adjust as needed */
+  font-weight: bold;
+  color: #007bff; /* A prominent blue from the image theme */
+  text-decoration: none; /* Removes underline by default */
+  padding: 8px 12px;
+  border-radius: 4px;
+  transition: all 0.3s ease; /* Smooth transition for the hover effect */
+  cursor: pointer;
+}
+
+/* 2. Hover Effect */
+.check-status-link:hover {
+  /* Effect: Light blue background */
+  background-color: #e6f0ff; /* Very light blue for subtle highlight */
+  color: #0056b3; /* Slightly darker blue text */
+  text-decoration: none; /* Ensure no underline appears on hover */
+}
+
+/* 3. Active/Click State (for visual feedback when clicked) */
+.check-status-link:active {
+  /* Effect: Darker blue background when the user is actively clicking it */
+  background-color: #cce0ff;
+  color: #004085;
+}
