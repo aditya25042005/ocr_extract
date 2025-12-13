@@ -166,3 +166,31 @@
   background: linear-gradient(180deg, #1565C0 0%, #0D47A1 100%) !important;
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
+/* 1. Base Styling for the "CHECK STATUS" link */
+.check-status-link {
+  /* Inherits from the original element provided in your request */
+  font-family: Arial, sans-serif; /* Example font, adjust as needed */
+  font-size: 16px; /* Example size, adjust as needed */
+  font-weight: bold;
+  color: #007bff; /* A prominent blue from the image theme */
+  text-decoration: none; /* Removes underline by default */
+  padding: 8px 12px;
+  border-radius: 4px;
+  transition: all 0.3s ease; /* Smooth transition for the hover effect */
+  cursor: pointer;
+}
+
+/* 2. Hover Effect */
+.check-status-link:hover {
+  /* Effect: Light blue background */
+  background-color: #e6f0ff; /* Very light blue for subtle highlight */
+  color: #0056b3; /* Slightly darker blue text */
+  text-decoration: none; /* Ensure no underline appears on hover */
+}
+
+/* 3. Active/Click State (for visual feedback when clicked) */
+.check-status-link:active {
+  /* Effect: Darker blue background when the user is actively clicking it */
+  background-color: #cce0ff;
+  color: #004085;
+}

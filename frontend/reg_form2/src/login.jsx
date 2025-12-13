@@ -10,8 +10,10 @@ import {
 } from "./components/ui/input-otp"
 import { useRef } from 'react';
 import api from './api';
-
+import { useNavigate } from 'react-router-dom'; // 1. Import useNavigate
+import { Toaster } from 'sonner';
 function Login() {
+  const navigate = useNavigate(); // 2. Initialize useNavigate
   let  [email, setEmail ] = useState('');
   let  [otp, setotp ] = useState('');
 
@@ -24,9 +26,17 @@ function Login() {
         'otp':otp
   })
   .then(function (response) {
-   
+console.log(response);
+console.log('Value to be stored:', email);
+localStorage.setItem('email', email);
+setTimeout(() => {
+                    navigate('/forms'); // Navigate only after a brief delay
+                }, 50); // 50 milliseconds is usually enough to prevent the race condition
+
   })
   .catch(function (error) {
+          Toaster.error("Error in login. Please try again.");
+
     console.log(error);
   });
 
@@ -45,6 +55,7 @@ function Login() {
       otp_check.current.innerText = "Verify & Proceed";
     }
     else{
+      Toaster.error("Error sending OTP. Please try again.");
       otp_check.current.innerText = "Send OTP";
     }
   })
@@ -117,19 +128,24 @@ function Login() {
           </InputOTP>
         </div>
 
-        <button className='login-button' ref={otp_check} onClick={()=>{otp_button()}}>Send OTP</button>
-        Verify & Proceed
-
+   <button className='login-button' ref={otp_check} onClick={()=>{otp_button()}}>Send OTP</button>
+     
         {/* NEW: Footer Links */}
         <div className="box-footer">
             <div className="footer-link">
-                <HelpCircle size={14} />
-                <span>Trouble receiving OTP?</span>
             </div>
             <p className="footer-note">By continuing, you agree to the <span className="blue-text">Terms of Service</span>.</p>
         </div>
 
       </div>
+      
+         <div className='footer'>
+    
+        © 2024 Government of India. All rights reserved.
+         </div>
+     
+        
+
     </>
   )
 }

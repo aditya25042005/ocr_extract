@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import { Upload, X, Eye, FileText, AlertCircle, Paperclip, CheckSquare, Square, ChevronDown } from 'lucide-react';
 import { PDFDocument, rgb } from 'pdf-lib';
 import './forms.css';
@@ -6,13 +6,16 @@ import { Viewer, SpecialZoomLevel } from '@react-pdf-viewer/core';
 import { fullScreenPlugin } from '@react-pdf-viewer/full-screen';
 import '@react-pdf-viewer/full-screen/lib/styles/index.css';
 import '@react-pdf-viewer/core/lib/styles/index.css';
+import { useNavigate } from 'react-router-dom'; // 1. Import useNavigate
+
 import api from './api';
 const DOC_OPTIONS = {
-  identity: ['Aadhaar Card', 'Driving License', 'Passport', 'Voter ID', 'PAN Card'],
-  dob: ['Birth Certificate', 'SSLC Marks Card', 'Passport', 'Aadhaar Card'],
-  address: ['Aadhaar Card', 'Driving License', 'Passport', 'Utility Bill', 'Rent Agreement'],
-  autofill:['handwritten','printed']
+  identity: ['Aadhaar Card', 'Driving License', 'Voter ID', 'PAN Card'],
+  dob: ['Birth Certificate', 'SSLC Marks Card', 'PAN CARD', 'Aadhaar Card'],
+  address: ['Aadhaar Card', 'Driving License', 'Utility Bill', 'Rent Agreement'],
+  autofill:['handwritten','Aadhaar Card']
 };
+import { toast } from "sonner"
 
 
 // Reusable Component for Input Fields (Moved Outside)
@@ -161,6 +164,98 @@ const generateHighlightedFile = async (originalFile, coordsList) => {
         ctx.lineWidth = 4;
 
         coordsList.forEach((coords) => {
+          const [x1, y1, x2, y2] = coords.coordinates;
+          const width = x2 - x1;
+          const height = y2 - y1;
+          if(coords.score>0.8){
+            ctx.strokeStyle = 'green';
+                ctx.fillStyle = "green";
+
+          }
+          else if(coords.score>0.5){
+            ctx.strokeStyle = 'pink';
+            ctx.fillStyle = "pink";
+          }
+          else{
+            ctx.strokeStyle = 'red';
+            ctx.fillStyle = "red";
+          }
+          ctx.strokeRect(x1, y1, width, height);
+          ctx.lineWidth = 4; // Changed from 2 to 4
+          // 2. Increase Text Size
+          ctx.font = "bold 32px calibri"; // Changed from 14px to 24px (and added 'bold')
+          ctx.fillText(`${coords.score*100}%` ,(x2+10) , (y1+y2)/2);
+          ctx.fillText(coords.label ,x2+10 ,(y1+y2)/2+30);
+
+
+          
+          
+        });
+
+        canvas.toBlob((blob) => {
+          resolve(URL.createObjectURL(blob));
+        }, fileType);
+      };
+    });
+  }
+  return URL.createObjectURL(originalFile);
+};
+const generateHighlightedFile2 = async (originalFile, coordsList) => {
+  if (!coordsList || coordsList.length === 0) return URL.createObjectURL(originalFile);
+
+  const fileType = originalFile.type;
+
+  // --- PDF HANDLING ---
+  if (fileType === 'application/pdf') {
+    const arrayBuffer = await originalFile.arrayBuffer();
+    const pdfDoc = await PDFDocument.load(arrayBuffer);
+    const firstPage = pdfDoc.getPages()[0]; 
+    const { height: pageHeight } = firstPage.getSize();
+
+    coordsList.forEach((coords) => {
+      // Data is [x1, y1, x2, y2]
+      const [x1, x2, y1, y2] = coords;
+
+      const width = Math.abs(x2 - x1);
+      const height = Math.abs(y2 - y1);
+      
+      // Calculate Y for PDF (Flip axis: PageHeight - TopY)
+      // Top visual Y is the smaller number in PDF coordinates usually, but we flip.
+      // Standard Formula: PageHeight - (y_bottom_left + height)
+      // Since inputs are likely Top-Left based images coords:
+      // We convert Image Top-Left (y1) to PDF Bottom-Left.
+      const pdfY = pageHeight - (y1 + height);
+
+      firstPage.drawRectangle({
+        x: x1,
+        y: pdfY,
+        width: width,
+        height: height,
+        borderColor: rgb(0, 0.8, 0.8), 
+        borderWidth: 2,
+      });
+    });
+
+    const pdfBytes = await pdfDoc.save();
+    return URL.createObjectURL(new Blob([pdfBytes], { type: 'application/pdf' }));
+  }
+
+  // --- IMAGE HANDLING ---
+  else if (fileType.startsWith('image/')) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = URL.createObjectURL(originalFile);
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        
+        ctx.drawImage(img, 0, 0);
+        ctx.strokeStyle = '#0d9488'; 
+        ctx.lineWidth = 4;
+
+        coordsList.forEach((coords) => {
           const [x1, x2, y1, y2] = coords.coordinates;
           const width = x2 - x1;
           const height = y2 - y1;
@@ -201,11 +296,17 @@ const generateHighlightedFile = async (originalFile, coordsList) => {
 const Forms = () => {
   const fullScreenPluginInstance = fullScreenPlugin();
 const { EnterFullScreenButton } = fullScreenPluginInstance;
-
+  const navigate=useNavigate(); // 2. Initialize useNavigate
   const [new_class, set_new_class] = useState('');
   const [viewfile, setviewfile] = useState(null);
   const [errors, setErrors] = useState({});
+const [dob_proof_score, setDobproof] = useState('');
 
+  // 2. State for Gender
+  const [gender_name_proof_score, setGendernameproof] = useState('');
+
+  // 3. State for Proof Score (proof_score)
+  const [adressproofscore, setaddressProofScore] = useState('');
   // State matching the Django Model Structure
   const [formData, setFormData] = useState({
     // Personal Details
@@ -297,7 +398,7 @@ if (rawDob && typeof rawDob === 'string') {
       score: field.confidence_score   // 0.98
   }))
   .filter(item => item.coordinates && Array.isArray(item.coordinates) && item.coordinates.length === 4);
-const highlightedPreviewUrl = await generateHighlightedFile(
+const highlightedPreviewUrl = await generateHighlightedFile2(
         formData.documents.auto_fill.file, 
         coordinateList 
       );
@@ -308,15 +409,15 @@ const updatedAutoFillDoc = {
 
         setFormData(prev => ({
           ...prev,
-          firstName: receivedData?.['fields']?.['Name Raw']?.['first_name'] || prev.firstName,
-  middleName: receivedData?.['fields']?.['Name Raw']?.['middle_name'] || prev.middleName,
-  lastName: receivedData?.['fields']?.['Name Raw']?.['last_name'] || prev.lastName,
-  gender: receivedData?.['fields']?.['Gender'] || prev.gender,
+          firstName: receivedData?.['fields']?.['First Name'] ['value']|| prev.firstName,
+  middleName: receivedData?.['fields']?.['Middle Name']  ['value']|| prev.middleName,
+  lastName: receivedData?.['fields']?.['Last Name']  ['value']|| prev.lastName,
+  gender: receivedData?.['fields']?.['Gender']?.['value'] || prev.gender,
   dob: formattedDob || prev.dob,
   phone: receivedData?.['fields']?.['Phone']?.['value'] || prev.phone,
   email: receivedData?.['fields']?.['Email']?.['value'] || prev.email,
   permanentAddress: {
-    permanent_address_line: receivedData?.['fields']?.['Address'] || prev.permanentAddress?.permanent_address_line,
+    permanent_address_line: receivedData?.['fields']?.['Address'] ?.['value']|| prev.permanentAddress?.permanent_address_line,
     permanent_city: receivedData?.['fields']?.['City']?.['value'] || prev.permanentAddress?.permanent_city,
     permanent_state: receivedData?.['fields']?.['State']?. ['value']|| prev.permanentAddress?.permanent_state,
     permanent_pincode: receivedData?.['fields']?.['Pincode']?.['value'] || prev.permanentAddress?.permanent_pincode,
@@ -386,12 +487,112 @@ api.post('/api/verify-documents/',
       // Note: Axios will automatically add the "boundary" string needed for files.
       'Content-Type': 'multipart/form-data',
     }},)
-  .then(function (response) {
+  .then( async function (response) {
     console.log(response);
 
-    data=response.data['verification_results'];
+ //   data=response.data['verification_results'];
+
+console.log("fffffffffff")
+
+//one for marking in gender_name_proof
 
 
+//one for marking in dob proof
+
+
+// one of marking in address type
+const result = response.data.verification_result; // The JSON object you pasted
+
+// 1. Helper Function to format the data safely
+const getFieldData = (key, data) => {
+  // if data is null (like last_name) or has no coordinates, skip it
+  if (!data || !data.coordinates || !Array.isArray(data.coordinates)) {
+    return null;
+  }
+
+  return {
+    label: key.replace(/_/g, ' ').toUpperCase(), // Converts "first_name" -> "FIRST NAME"
+    value: data.detected_text || "",
+    coordinates: data.coordinates, // [x1, y1, x2, y2]
+    score: data.match_score || 0
+  };
+};
+
+// ---------------------------------------------------------
+// LIST 1: Identity (Name, Gender, Blood Group)
+// ---------------------------------------------------------
+const identityKeys = ["first_name", "middle_name", "last_name", "gender", "blood_group"];
+console.log("fffffffffff")
+const identityCoords = identityKeys
+  .map(key => getFieldData(key, result[key]))
+  .filter(item => item !== null); // Remove nulls
+
+let highlightedPreviewUrl = await generateHighlightedFile(
+        formData.documents.name_gender_proof.file, 
+        identityCoords 
+      );
+let updatedAutoFillDoc1 = {
+          ...formData.documents.name_gender_proof,
+          preview: highlightedPreviewUrl, 
+      };
+         
+// ---------------------------------------------------------
+// LIST 2: Date of Birth
+// ---------------------------------------------------------
+const dobCoords = [getFieldData("date_of_birth", result.date_of_birth)]
+  .filter(item => item !== null);
+
+   highlightedPreviewUrl = await generateHighlightedFile(
+        formData.documents.dob_proof.file, 
+       dobCoords 
+      );
+let updatedAutoFillDoc2 = {
+          ...formData.documents.dob_proof,
+          preview: highlightedPreviewUrl, 
+      };
+   
+  
+      
+      
+
+// ---------------------------------------------------------
+// LIST 3: Address
+// ---------------------------------------------------------
+// Note: In your current JSON, 'address' does not have 'coordinates' inside it.
+// If you update your backend to send coordinates for the address block, this will work.
+const addrObj = result.address;
+const addrBox = addrObj?.coordinates || null; // The main box for the whole address
+const addressFields = ["address_line", "city", "state", "pincode", "country"];
+
+const addressCoords = addressFields
+  .map(key => {
+     // Pass the key, the value (string), and the main address box coordinates
+     return getFieldData(key, addrObj?.[key], addrBox);
+  })
+  .filter(item => item !== null);
+ highlightedPreviewUrl = await generateHighlightedFile(
+        formData.documents.address_proof.file, 
+        addressCoords
+      );
+  let updatedAutoFillDoc3 = {
+          ...formData.documents.address_proof,
+          preview: highlightedPreviewUrl, 
+      };
+         setFormData(prev => ({
+         ...prev,
+    documents: {
+        ...prev.documents,
+       name_gender_proof:  updatedAutoFillDoc1,
+       dob_proof:updatedAutoFillDoc2,
+       address_proof:updatedAutoFillDoc3
+      }}))
+      
+// ---------------------------------------------------------
+// DEBUGGING
+// ---------------------------------------------------------
+console.log("Identity Boxes:", identityCoords);
+console.log("DOB Boxes:", dobCoords);
+console.log("Address Boxes:", addressCoords);
   })
   .catch(function (error) {
     console.log(error);
@@ -402,7 +603,7 @@ api.post('/api/verify-documents/',
   }
   // Submit Passport Data
   const submit_passport = () => {
-const data = new FormData();
+  let data = new FormData();
 
   // --- A. Append Simple Fields ---
   data.append('first_name', formData.firstName);
@@ -449,6 +650,7 @@ api.post('/api/passport/create/',
     }},)
   .then(function (response) {
     console.log(response);
+    toast.success("Passport Application Submitted Successfully")
     
   })
   .catch(function (error) {
@@ -504,44 +706,146 @@ api.post('/api/passport/create/',
 
   // Sync permanent address if checkbox is checked
   useEffect(() => {
+if(localStorage.getItem('email')){
+
+  if(!formData.firstName){
+toast.success(`hello ${localStorage.getItem('email')}`)
+  }
+}
+
+else{
+  navigate('/login')
+
+
     if (formData.permanent_address_same_as_present) {
       setFormData(prev => ({
         ...prev,
         permanentAddress: { ...prev.presentAddress }
       }));
     }
-  }, [formData.presentAddress]);
+  } [formData.presentAddress,navigate]});
 
+
+const detect_aadhaar = async (file) => {
+  try {
+    const form_data = new FormData();
+    form_data.append('file', file);
+
+    const response = await api.post('/api/aadhaar-detect/', form_data, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+
+    // Return true if is_aadhar is true, otherwise false
+    if (response.data && response.data['is_aadhaar']) {
+      return true;
+    } else {
+     // alert("Please upload a valid Aadhaar Card");
+        toast.error('This doc is not Aadhaar');
+      return false;
+    }
+    
+  } catch (error) {
+    console.error("Error detecting Aadhaar:", error);
+    return false;
+  }
+};
+/**
+ * Submits a raw File object for quality scoring, checks the results, and handles API errors.
+ *
+ * @param {File} file - The raw JavaScript File object selected by the user.
+ * @param {object} apiInstance - The Axios instance (or similar) for making API calls.
+ * @param {string} [formDataKey='file'] - The field name the backend expects for the file.
+ * @returns {Promise<{accepted: boolean, message: string, data: object | null}>} 
+ * A promise resolving to the check result.
+ */
+const checkDocumentQuality = async (file,docKey) => {
+  if (!file) {
+    throw new Error("No file provided for quality check.");
+  }
+
+  // 1. Create FormData from the raw File object
+  const formData = new FormData();
+  formData.append('file', file); 
+
+  try {
+    // 2. API Call to /api/quality-score/
+    const response = await api.post('/api/quality-score/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data', 
+      },
+    });
+
+    const data = response.data;
+    const { 
+      final_quality_score, 
+      sharpness_score, 
+      exposure_status, 
+    } = data;
+    // 3. Perform Quality Checks
+    let rejectionMessage = null;
+
+    
+     if (final_quality_score < 50) {
+    //  alert(`Please re-upload: Low overall quality. (Overall Score: ${final_quality_score})`)
+    }
+
+    // 4. Return Result
+  
+//alert(docKey)
+if (docKey === 'name_gender_proof') {
+    // If the key matches 'name_gender_proof', update the gender_name_proof state
+    setGendernameproof(final_quality_score);
+    console.log("Updated state: gender_name_proof");
+
+} else if (docKey === 'dob_proof') {
+    // If the key matches 'dob_proof', update the dob_proof_score state
+    setDobproof(final_quality_score);
+    console.log("Updated state: dob_proof_score");
+
+} else if (docKey === 'address_proof') {
+    // If the key matches 'address_proof', update the adressproof state
+    setaddressProofScore(final_quality_score);
+    console.log("Updated state: adressproof");
+
+} else {
+    if (rejectionMessage) {
+      return false
+    } 
+    console.warn(`Unknown document key received: ${dockey}`);
+}
+  } catch (error) {
+    // 5. Handle API/Network Errors
+    const errorMessage = error.response
+      ? `Server Error: ${error.response.status} - ${error.response.statusText}`
+      : "A network or internal error occurred. Check your connection.";
+      
+    throw new Error(errorMessage);
+  }
+};
   // Handle File Upload
-  const handleFileUpload = (docKey, event) => {
+  const handleFileUpload =async (docKey, event) => {
     //imp 
-
         console.log("hi");
     //t check whether it is aadhar or not
     const file = event.target.files?.[0];
-const formData = new FormData();
-formData.append('file', file); // 'file' is the key name expected by your backend
-     api.post('/api/aadhaar-detect/',formData,{headers: {
+        if (!file) return;
 
-          'Content-Type': 'multipart/form-data',
+const form_data = new FormData();
+console.log(formData['documents'],"lsl")
 
-        }},)
+if(formData['documents']?.[docKey]?.docType==='Aadhaar Card'){
 
-      .then(  function (response) {
-       if(!response.data['is_aadhar']){
-          alert("Please upload valid Aadhar Card");
+console.log("hero")
 
-       }
-
-      }).catch(function (error) {
-
-
-
-
-     })
-     
+const isValid = await detect_aadhaar(file);
+if (isValid) {
+  // Proceed to save or upload
+  alert("aadhar found")
+} else {
+  // Stop everything
+}
+    }
     console.log(file,"hi");
-    if (!file) return;
 
     // Basic Validation
     if (file.size > 2 * 1024 * 1024) {
@@ -550,7 +854,21 @@ formData.append('file', file); // 'file' is the key name expected by your backen
     }
 
     const preview = URL.createObjectURL(file);
-    
+    ///score
+    console.log("bye")
+     const isAccepted = checkDocumentQuality(file,docKey);
+
+    if (isAccepted) {
+      // Logic for accepted document (e.g., proceed to next step, display success message)
+      console.log("Proceeding with accepted document...");
+      // For example: nextStep();
+    } else {
+      // Logic for rejected document (the alert was already shown inside the function)
+      console.log("Document rejected. User alerted.");
+    }
+
+
+
     setFormData(prev => ({
       ...prev,
       documents: {
@@ -559,7 +877,8 @@ formData.append('file', file); // 'file' is the key name expected by your backen
       }
     }));
 
-    /// checking score '
+    /// checking score 
+
       
     
   };
@@ -659,7 +978,11 @@ formData.append('file', file); // 'file' is the key name expected by your backen
                     onRemove={removeFile}
                 />
               </div>
-
+               {gender_name_proof_score && (
+        <p style={{ marginTop: '5px', fontSize: '0.9em', color: 'green' }}>
+            Document Quality Score: {gender_name_proof_score}
+        </p>
+    )}
               {/* DOB PROOF SELECTOR */}
               <div className="mt-2">
                  <DocumentSelector 
@@ -674,6 +997,11 @@ formData.append('file', file); // 'file' is the key name expected by your backen
                     onOpen={handleOpenFile}
                     onRemove={removeFile}
                  />
+                      {dob_proof_score && (
+        <p style={{ marginTop: '5px', fontSize: '0.9em', color: 'green' }}>
+            Document Quality Score: {dob_proof_score}
+        </p>
+    )}
               </div>
             </section>
 
@@ -709,6 +1037,12 @@ formData.append('file', file); // 'file' is the key name expected by your backen
                         onOpen={handleOpenFile}
                         onRemove={removeFile}
                     />
+                
+            {adressproofscore && (
+        <p style={{ marginTop: '5px', fontSize: '0.9em', color: 'green' }}>
+            Document Quality Score: {adressproofscore}
+        </p>
+    )}
                 </div>
               </div>
             </section>
@@ -753,26 +1087,41 @@ formData.append('file', file); // 'file' is the key name expected by your backen
                         onOpen={handleOpenFile}
                         onRemove={removeFile}
                     />
-               <button className="px-8 py-3 bg-gradient-to-r from-teal-600 to-teal-700 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all"
-               onClick={verfiy_passport}>
-                 verify Passport Record
-               </button>
+              
             </div>
-            <button className="px-8 py-3 bg-gradient-to-r from-teal-600 to-teal-700 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all"
-               onClick={submit_passport}>
-                 Save Passport Record
-               </button>
-            
+           
             </section>
              
 
-            {/* Submit Button */}
-            <div className="flex justify-end pt-4">
-               <button className="px-8 py-3 bg-gradient-to-r from-teal-600 to-teal-700 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all"
-               onClick={submit_auto_fill}>
+            
+            </div>
+            <div className="flex flex-wrap justify-end items-center gap-4 pt-6 border-t border-gray-100">
+               
+             <div className="flex w-full gap-4 pt-6 border-t border-gray-100">
+               
+               <button 
+                  className="flex-1 px-6 py-2.5 bg-gray-600 text-white font-semibold rounded-lg shadow hover:bg-gray-700 transition-all text-center justify-center"
+                  onClick={submit_auto_fill}
+               >
                  Auto Fill Form
                </button>
+
+               <button 
+                  className="flex-1 px-6 py-2.5 bg-teal-600 text-white font-semibold rounded-lg shadow hover:bg-teal-700 hover:-translate-y-0.5 transition-all text-center justify-center"
+                  onClick={verfiy_passport}
+               >
+                 Verify Passport Record
+               </button>
+
+               <button 
+                  className="flex-1 px-6 py-2.5 bg-gradient-to-r from-teal-700 to-cyan-700 text-white font-bold rounded-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all text-center justify-center"
+                  onClick={submit_passport}
+               >
+                 Save Passport Record
+               </button>
+
             </div>
+
 
           </div>
         </div>
@@ -796,6 +1145,7 @@ formData.append('file', file); // 'file' is the key name expected by your backen
                     <X size={20} />
                 </button>
             </div>
+            
 
             <div className="h-screen w-full bg-gray-500 overflow-hidden">
 {viewfile.file.type==="application/pdf" ?
@@ -807,9 +1157,15 @@ formData.append('file', file); // 'file' is the key name expected by your backen
                 <img src={viewfile.preview} alt="Document Preview" className="object-contain w-full h-full bg-gray-900" />}
 
             </div>
+            
 
         </div>
       )}
+      
+       
+     
+        
+
       
     </div>
   );
