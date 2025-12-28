@@ -1,0 +1,99 @@
+/* Container for the entire page */
+.status-page-container {
+  /* You will add your background here */
+  min-height: 100vh; 
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 100px; /* Space for the header */
+}
+
+/* Card/Panel for the input form */
+
+.status_main{
+  display:flex;
+  justify-content:center;
+  height:90vh;
+  align-items:center;
+   
+}
+.status-content-card {
+  height:400px;;
+  background-color: white;
+  padding: 40px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+  width: 100%;
+  max-width: 450px;
+
+  text-align: center;
+}
+
+.status-title {
+  color: #004d99; /* Darker blue for prominence */
+  margin-bottom: 10px;
+  font-size: 24px;
+}
+
+.status-subtitle {
+  color: #6c757d; /* Neutral color for descriptive text */
+  margin-bottom: 30px;
+  font-size: 16px;
+}
+
+/* Form Elements */
+.status-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.input-group {
+  text-align: left;
+}
+
+.input-label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: #343a40;
+}
+
+.status-input {
+  width: 100%;
+  padding: 10px 15px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 16px;
+  /* Focus glow effect similar to the theme's blue */
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.status-input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  outline: none;
+}
+
+/* Status Check Button - styled like the "Pre-register" button */
+.check-status-button {
+  background-color: #007bff; /* Primary Blue */
+  color: white;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 6px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.1s ease;
+  margin-top: 10px;
+}
+
+.check-status-button:hover {
+  background-color: #0056b3; /* Darker blue on hover */
+}
+
+.check-status-button:active {
+  background-color: #004085; /* Darkest blue on click */
+  transform: scale(0.99);
+}
