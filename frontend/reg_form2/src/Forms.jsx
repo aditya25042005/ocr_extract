@@ -691,15 +691,15 @@ api.post('/api/passport/create/',
       return {
         ...prev,
         permanent_address_same_as_present: newSameAsPresent,
-        permanentAddress: newSameAsPresent ? { 
+        presentAddress: newSameAsPresent ? { 
            
-        permanent_address_line: prev.presentAddress.present_address_line,
-        permanent_city: prev.presentAddress.present_city,
-        permanent_state: prev.presentAddress.present_state,
-        permanent_pincode: prev.presentAddress.present_pincode,
-        permanent_country: prev.presentAddress.present_country,
+        present_address_line: prev.permanentAddress.permanent_address_line,
+        present_city: prev.permanentAddress.permanent_city,
+        present_state: prev.permanentAddress.permanent_state,
+        present_pincode: prev.permanentAddress.permanent_pincode,
+        present_country: prev.permanentAddress.permanent_country,
       
-         } : prev.permanentAddress
+         } : prev.presentAddress
       };
     });
   };
@@ -1005,12 +1005,49 @@ if (isValid) {
               </div>
             </section>
 
-            {/* 2. PRESENT ADDRESS */}
+         
+
+            {/* 2. PERMANENT ADDRESS */}
             <section>
-              <div className="flex justify-between items-center mb-4 border-b pb-2">
-                <h2 className="text-xl font-semibold text-gray-800">Present Address</h2>
+                      <div className="flex justify-between items-center mb-4 border-b pb-2">
+
+                <h2 className="text-xl font-semibold text-gray-800 mr-4">Permanent Address</h2>
+               
               </div>
+
+           
+                <div className="grid gap-4 animate-fadeIn">
+                  <InputField label="Line" name="permanent_address_line" value={formData.permanentAddress.permanent_address_line} onChange={(e) => handleInputChange(e, 'permanentAddress')} required />
+                  
+                  <div className="grid md:grid-cols-2 gap-4">
+                     <InputField label="City" name="permanent_city" value={formData.permanentAddress.permanent_city} onChange={(e) => handleInputChange(e, 'permanentAddress')} required />
+                     <InputField label="State" name="permanent_state" value={formData.permanentAddress.permanent_state} onChange={(e) => handleInputChange(e, 'permanentAddress')} required />
+                  </div>
+                  
+                  <div className="grid md:grid-cols-2 gap-4">
+                     <InputField label="Pincode" name="permanent_pincode" value={formData.permanentAddress.permanent_pincode} onChange={(e) => handleInputChange(e, 'permanentAddress')} required />
+                     <InputField label="Country" name="permanent_country" value={formData.permanentAddress.permanent_country} onChange={(e) => handleInputChange(e, 'permanentAddress')} required />
+                  </div>
+                </div>
               
+            
+           
+            </section>
+               {/* 2. PRESENT ADDRESS */}
+            <section>
+                       <div className="flex items-center mb-4 border-b pb-2">
+
+                <h2 className="text-xl font-semibold text-gray-800">Present Address </h2>
+                  <button 
+                  onClick={handleCheckboxChange} 
+                  className="flex items-center text-sm text-teal-700 hover:text-teal-900 focus:outline-none"
+                >
+                  {formData.permanent_address_same_as_present ? <CheckSquare className="w-5 h-5 mr-1" /> : <Square className="w-5 h-5 mr-1" />}
+                  Same as Permanent
+                </button>
+              </div>
+           {!formData.permanent_address_same_as_present && (
+
               <div className="grid gap-4">
                 <InputField label="Line" name="present_address_line" value={formData.presentAddress.present_address_line} onChange={(e) => handleInputChange(e, 'presentAddress')} required />
                 
@@ -1024,7 +1061,11 @@ if (isValid) {
                    <InputField label="Country" name="present_country" value={formData.presentAddress.present_country} onChange={(e) => handleInputChange(e, 'presentAddress')} required />
                 </div>
 
-                {/* ADDRESS PROOF SELECTOR */}
+              
+              </div>
+)}
+            </section>
+              {/* ADDRESS PROOF SELECTOR */}
                 <div className="mt-2">
                     <DocumentSelector 
                         docKey="address_proof" 
@@ -1044,37 +1085,6 @@ if (isValid) {
         </p>
     )}
                 </div>
-              </div>
-            </section>
-
-            {/* 3. PERMANENT ADDRESS */}
-            <section>
-              <div className="flex items-center mb-4 border-b pb-2">
-                <h2 className="text-xl font-semibold text-gray-800 mr-4">Permanent Address</h2>
-                <button 
-                  onClick={handleCheckboxChange} 
-                  className="flex items-center text-sm text-teal-700 hover:text-teal-900 focus:outline-none"
-                >
-                  {formData.permanent_address_same_as_present ? <CheckSquare className="w-5 h-5 mr-1" /> : <Square className="w-5 h-5 mr-1" />}
-                  Same as Present
-                </button>
-              </div>
-
-              {!formData.permanent_address_same_as_present && (
-                <div className="grid gap-4 animate-fadeIn">
-                  <InputField label="Line" name="permanent_address_line" value={formData.permanentAddress.permanent_address_line} onChange={(e) => handleInputChange(e, 'permanentAddress')} required />
-                  
-                  <div className="grid md:grid-cols-2 gap-4">
-                     <InputField label="City" name="permanent_city" value={formData.permanentAddress.permanent_city} onChange={(e) => handleInputChange(e, 'permanentAddress')} required />
-                     <InputField label="State" name="permanent_state" value={formData.permanentAddress.permanent_state} onChange={(e) => handleInputChange(e, 'permanentAddress')} required />
-                  </div>
-                  
-                  <div className="grid md:grid-cols-2 gap-4">
-                     <InputField label="Pincode" name="permanent_pincode" value={formData.permanentAddress.permanent_pincode} onChange={(e) => handleInputChange(e, 'permanentAddress')} required />
-                     <InputField label="Country" name="permanent_country" value={formData.permanentAddress.permanent_country} onChange={(e) => handleInputChange(e, 'permanentAddress')} required />
-                  </div>
-                </div>
-              )}
                <div className="auto fill">
                  <DocumentSelector 
                         docKey="auto_fill"
@@ -1089,8 +1099,6 @@ if (isValid) {
                     />
               
             </div>
-           
-            </section>
              
 
             
@@ -1125,7 +1133,9 @@ if (isValid) {
 
           </div>
         </div>
+        
       </div>
+      
 
       {/* RIGHT SIDE: PDF PREVIEW */}
       {viewfile && (
