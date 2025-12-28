@@ -1,0 +1,94 @@
+   @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f5f7fa;
+        }
+
+        /* Custom Colors matching the screenshot */
+        .bg-teal-custom { background-color: #0d6e7d; }
+        .text-teal-custom { color: #0d6e7d; }
+        .border-teal-custom { border-color: #0d6e7d; }
+        
+        .bg-pink-custom { background-color: #fa4b84; }
+        .text-pink-custom { color: #fa4b84; }
+        .hover-bg-pink-dark:hover { background-color: #d63a6e; }
+
+        /* Custom styling for inputs to match the "line" style */
+        .custom-input {
+            border: none;
+            border-bottom: 1px solid #e2e8f0;
+            width: 100%;
+            padding: 6px 0;
+            outline: none;
+            transition: border-color 0.3s;
+            color: #4a5568;
+            font-size: 0.875rem; /* text-sm */
+            background-color: transparent;
+        }
+        .custom-input:focus {
+            border-bottom-color: #0d6e7d;
+        }
+
+        /* Styles for the custom dropdown scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        .step-connector {
+            flex-grow: 1;
+            height: 2px;
+            background-color: #e2e8f0;
+            margin: 0 10px;
+        }
+
+        .active-step-text {
+            color: #5b9bd5; 
+        }
+
+        /* Hide number input spinners */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+
+        .img-viewer {
+  position: relative;
+  width: 600px;
+}
+
+.img-viewer {
+  width:max(100,100%);
+  height:max(100px,100%);
+
+  display: block;
+}
+
+.img-viewer canvas {
+ 
+  pointer-events: none;
+}
+#overlayCanvas {
+  width: 100%;        /* responsive */
+  height: auto;
+  display: block;
+}
+@media (max-width: 600px) {
+  .img-viewer {
+    max-width: 100%;
+  }
+}
+#overlayCanvas {
+  transition: transform 0.3s ease;
+}
+#overlayCanvas:hover {
+  transform: scale(1.02);
+}

@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Documents</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f5f7fa;
+        }
+
+        /* Custom Colors matching the design */
+        .bg-teal-custom { background-color: #0d6e7d; }
+        .text-teal-custom { color: #0d6e7d; }
+        .bg-pink-custom { background-color: #fa4b84; }
+        .text-pink-custom { color: #fa4b84; }
+        .hover-bg-pink-dark:hover { background-color: #d63a6e; }
+
+        /* Custom Input Styling to match the 'Single Upload Box' look */
+        .custom-input {
+            border: none;
+            border-bottom: 1px solid #e2e8f0;
+            width: 100%;
+            padding: 6px 0;
+            outline: none;
+            background: transparent;
+            font-size: 14px;
+            color: #555;
+        }
+        .custom-input:focus {
+            border-bottom-color: #0d6e7d;
+        }
+
+        .step-connector {
+            flex-grow: 1;
+            height: 2px;
+            background-color: #e2e8f0;
+            margin: 0 10px;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen text-sm">
+
+    <header class="bg-teal-custom text-white px-6 py-2 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-8">
+                <div class="flex flex-col items-center cursor-pointer">
+                    <div class="flex flex-col items-center cursor-pointer">
+                    <img src="./logo.png" alt="MOSIP Logo" class="h-8 w-8">
+                    <span class="text-[9px] font-bold tracking-widest mt-0.5">MOSIP</span>
+                </div>
+                </div>
+                <nav class="hidden md:flex space-x-6 text-xs font-medium tracking-wide">
+                    <a href="#" class="hover:text-gray-200">GETTING STARTED</a>
+                    <a href="#" class="hover:text-gray-200">FAQ</a>
+                    <a href="#" class="hover:text-gray-200">CONTACT</a>
+                </nav>
+            </div>
+            <div class="flex items-center space-x-6 text-xs font-medium">
+                <a href="#" class="flex items-center hover:text-gray-200"><i class="far fa-folder mr-2"></i>Your Applications</a>
+                <a href="#" class="flex items-center hover:text-gray-200"><i class="fas fa-power-off mr-2"></i>Logout</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow container mx-auto px-4 py-6 max-w-9xl">
+        
+        <div class="flex items-center justify-center mb-8 px-4 overflow-x-auto">
+            <div class="flex items-center whitespace-nowrap">
+                <i class="fas fa-check-circle text-xl text-teal-custom mr-2"></i>
+                <span class="text-teal-custom font-semibold text-base">Demographics Details</span>
+            </div>
+            <div class="step-connector w-12 mx-4"></div>
+            <div class="flex items-center whitespace-nowrap">
+                <i class="fas fa-upload mr-2 text-xl text-blue-500"></i>
+                <span class="text-blue-500 font-semibold text-base">Upload Document</span>
+            </div>
+            <div class="step-connector w-12 mx-4"></div>
+            <div class="flex items-center text-gray-400 whitespace-nowrap">
+                <i class="far fa-calendar-check mr-2 text-sm"></i>
+                <span class="text-sm">Book Appointment</span>
+            </div>
+            <div class="step-connector w-12 mx-4"></div>
+            <div class="flex items-center text-gray-400 whitespace-nowrap">
+                <i class="far fa-file-alt mr-2 text-sm"></i>
+                <span class="text-sm">Confirmation</span>
+            </div>
+        </div>
+
+        <div class="bg-white rounded shadow-lg p-8 mb-10">
+            
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6 border-b border-pink-100 pb-4">
+                <h2 class="text-pink-custom text-sm font-medium mb-4 md:mb-0">Upload Documents ( English )<span class="text-gray-400 text-sm italic"></span></h2>
+                <div class="text-gray-400 text-xs">Please upload valid Proof of Identity, Address, Relationship, and Date of Birth.</div>
+            </div>
+
+            <div class="text-gray-500 text-xs mb-4">
+                Allowed file type: pdf, jpeg, jpg, png, and allowed file size: 2mb
+            </div>
+
+            <form id="uploadForm" class="flex flex-col gap-8 items-start">
+                
+                <div class="flex flex-col gap-2">
+                    <div class="w-full h-[150px] max-w-[500px] bg-white border border-gray-300 rounded shadow-sm overflow-hidden relative z-40">
+                        <div class="bg-teal-custom text-white px-4 py-2 text-[13px] font-semibold">
+                            Identity Proof : *
+                        </div>
+
+                        <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6 items-end relative">
+                            
+                            <div class="relative"> 
+                                <label class="text-gray-500 text-xs block mb-1">Identity Proof</label>
+                                <div class="cursor-pointer group" onclick="upload_toggleDropdown('poiDropdown')">
+                                    <input id="poiInput" type="text" readonly placeholder="Reference Identity Card" 
+                                        class="custom-input cursor-pointer" />
+                                    <i class="fas fa-chevron-down absolute right-0 bottom-2 text-gray-400 text-xs"></i>
+                                </div>
+                                <div id="poiDropdown" class="hidden absolute top-[calc(100%+4px)] left-0 bg-white border border-gray-200 rounded w-48 shadow-lg z-50">
+                                    <div class="px-4 py-2 hover:bg-teal-50 cursor-pointer" onclick="selectOption('poiInput','poiDropdown','Reference Identity Card')">Reference Identity Card</div>
+                                    <div class="px-4 py-2 hover:bg-teal-50 cursor-pointer" onclick="selectOption('poiInput','poiDropdown','National ID')">National ID</div>
+                                    <div class="px-4 py-2 hover:bg-teal-50 cursor-pointer" onclick="selectOption('poiInput','poiDropdown','Driver License')">Driver License</div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="text-gray-500 text-xs block mb-1">Document Reference Id</label>
+                                <input type="text" value="" class="custom-input" />
+                            </div>
+
+                            <div class="flex flex-col items-end">
+                                <div id="poiFileDisplay" class="text-xs text-gray-500 mb-1 max-w-full truncate hidden"></div>
+                                <div class="flex gap-2 items-center">
+                                    <button type="button" id="poiViewButton" class="hidden bg-gray-200 text-gray-700 px-4 py-1.5 rounded text-xs font-bold uppercase hover:bg-gray-300 transition-colors" data-blob-url="" onclick="viewBlob(this.getAttribute('data-blob-url'))">View</button>
+                                    <input 
+                                        type="file" 
+                                        id="poiFile"
+                                        class="hidden"
+                                        onchange="upload_handleFileUpload('poiFile', 'poiScore', 'poiFileDisplay', 'poiBrowseLabel', 'poiViewButton')"
+                                    />
+
+                                    <label 
+                                        for="poiFile"
+                                        id="poiBrowseLabel"
+                                        class="border border-pink-400 text-pink-400 px-6 py-2 rounded text-xs font-bold 
+                                            hover:bg-pink-50 transition-colors uppercase cursor-pointer select-none"
+                                    >
+                                        BROWSE
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="poiScore" class="w-full max-w-[500px] p-2 border border-gray-200 bg-gray-50 rounded-lg hidden items-center justify-between text-xs">
+                        <span class="text-gray-700 font-medium">Document Quality Score:</span>
+                        <span class="font-bold text-gray-700" data-score=""></span>
+                    </div>
+                </div>
+
+
+                <div class="flex flex-col gap-2">
+                    <div class="w-full h-[150px] max-w-[500px] bg-white border border-gray-300 rounded shadow-sm overflow-hidden relative z-30">
+                        <div class="bg-teal-custom text-white px-4 py-2 text-[13px] font-semibold">
+                            Address Proof : *
+                        </div>
+
+                        <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6 items-end relative">
+                            
+                            <div class="relative">
+                                <label class="text-gray-500  text-xs block mb-1">Address Proof</label>
+                                <div class="cursor-pointer group" onclick="upload_toggleDropdown('poaDropdown')">
+                                    <input id="poaInput" type="text" readonly placeholder="Select Type" 
+                                        class="custom-input cursor-pointer" />
+                                    <i class="fas fa-chevron-down absolute right-0 bottom-2 text-gray-400 text-xs"></i>
+                                </div>
+                                <div id="poaDropdown" class="hidden absolute top-[calc(100%+4px)] left-0 bg-white border border-gray-200 rounded w-48 shadow-lg z-50">
+                                    <div class="px-4 py-2 hover:bg-teal-50 cursor-pointer" onclick="selectOption('poaInput','poaDropdown','Rental Contract')">Rental contract</div>
+                                    <div class="px-4 py-2 hover:bg-teal-50 cursor-pointer" onclick="selectOption('poaInput','poaDropdown','Bank Statement')">Bank Statement</div>
+                                    <div class="px-4 py-2 hover:bg-teal-50 cursor-pointer" onclick="selectOption('poaInput','poaDropdown','Rent Agreement')">Rent Agreement</div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="text-gray-500 text-xs block mb-1">Document Reference Id</label>
+                                <input type="text" class="custom-input" />
+                            </div>
+
+                            <div class="flex flex-col items-end">
+                                <div id="poaFileDisplay" class="text-xs text-gray-500 mb-1 max-w-full truncate hidden"></div>
+                                <div class="flex gap-2 items-center">
+                                    <button type="button" id="poaViewButton" class="hidden bg-gray-200 text-gray-700 px-4 py-1.5 rounded text-xs font-bold uppercase hover:bg-gray-300 transition-colors" data-blob-url="" onclick="viewBlob(this.getAttribute('data-blob-url'))">View</button>
+                                    <input 
+                                        type="file" 
+                                        id="poaFile"
+                                        class="hidden"
+                                        onchange="upload_handleFileUpload('poaFile', 'poaScore', 'poaFileDisplay', 'poaBrowseLabel', 'poaViewButton')"
+                                    />
+
+                                    <label 
+                                        for="poaFile"
+                                        id="poaBrowseLabel"
+                                        class="border border-pink-400 text-pink-400 px-6 py-2 rounded text-xs font-bold 
+                                            hover:bg-pink-50 transition-colors uppercase cursor-pointer select-none"
+                                    >
+                                        BROWSE
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="poaScore" class="w-full max-w-[500px] p-2 border border-gray-200 bg-gray-50 rounded-lg hidden items-center justify-between text-xs">
+                        <span class="text-gray-700 font-medium">Document Quality Score:</span>
+                        <span class="font-bold text-gray-700" data-score=""></span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-2">
+                    <div class="w-full h-[150px] max-w-[500px] bg-white border border-gray-300 rounded shadow-sm overflow-hidden relative z-20">
+                        <div class="bg-teal-custom text-white px-4 py-2 text-[13px] font-semibold">
+                            Relationship Proof : *
+                        </div>
+
+                        <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6 items-end relative">
+                            
+                            <div class="relative">
+                                <label class="text-gray-500 text-xs block mb-1">Relationship Proof</label>
+                                <div class="cursor-pointer group" onclick="upload_toggleDropdown('porDropdown')">
+                                    <input id="porInput" type="text" readonly placeholder="Select Type" 
+                                        class="custom-input cursor-pointer" />
+                                    <i class="fas fa-chevron-down absolute right-0 bottom-2 text-gray-400 text-xs"></i>
+                                </div>
+                                <div id="porDropdown" class="hidden absolute top-[calc(100%+4px)] left-0 bg-white border border-gray-200 rounded w-48 shadow-lg z-50">
+                                    <div class="px-4 py-2 hover:bg-teal-50 cursor-pointer" onclick="selectOption('porInput','porDropdown','Marriage Certificate')">Marriage Certificate</div>
+                                    <div class="px-4 py-2 hover:bg-teal-50 cursor-pointer" onclick="selectOption('porInput','porDropdown','Child Birth Certificate')">Child Birth Certificate</div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="text-gray-500 text-xs block mb-1">Document Reference Id</label>
+                                <input type="text" class="custom-input" />
+                            </div>
+
+                            <div class="flex flex-col items-end">
+                                <div id="porFileDisplay" class="text-xs text-gray-500 mb-1 max-w-full truncate hidden"></div>
+                                <div class="flex gap-2 items-center">
+                                    <button type="button" id="porViewButton" class="hidden bg-gray-200 text-gray-700 px-4 py-1.5 rounded text-xs font-bold uppercase hover:bg-gray-300 transition-colors" data-blob-url="" onclick="viewBlob(this.getAttribute('data-blob-url'))">View</button>
+                                    <input 
+                                        type="file" 
+                                        id="porFile"
+                                        class="hidden"
+                                        onchange="upload_handleFileUpload('porFile', 'porScore', 'porFileDisplay', 'porBrowseLabel', 'porViewButton')"
+                                    />
+
+                                    <label 
+                                        for="porFile"
+                                        id="porBrowseLabel"
+                                        class="border border-pink-400 text-pink-400 px-6 py-2 rounded text-xs font-bold 
+                                            hover:bg-pink-50 transition-colors uppercase cursor-pointer select-none"
+                                    >
+                                        BROWSE
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="porScore" class="w-full max-w-[500px] p-2 border border-gray-200 bg-gray-50 rounded-lg hidden items-center justify-between text-xs">
+                        <span class="text-gray-700 font-medium">Document Quality Score:</span>
+                        <span class="font-bold text-gray-700" data-score=""></span>
+                    </div>
+                </div>
+
+
+                <div class="flex flex-col gap-2">
+                    <div class="w-full h-[150px] max-w-[500px] bg-white border border-gray-300 rounded shadow-sm overflow-hidden relative z-10">
+                        <div class="bg-teal-custom text-white px-4 py-2 text-[13px] font-semibold">
+                            DOB Proof : *
+                        </div>
+
+                        <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6 items-end relative">
+                            
+                            <div class="relative">
+                                <label class="text-gray-500 text-xs block mb-1">DOB Proof</label>
+                                <div class="cursor-pointer group" onclick="upload_toggleDropdown('dobDropdown')">
+                                    <input id="dobInput" type="text" readonly placeholder="Select Type" 
+                                        class="custom-input cursor-pointer" />
+                                    <i class="fas fa-chevron-down absolute right-0 bottom-2 text-gray-400 text-xs"></i>
+                                </div>
+                                <div id="dobDropdown" class="hidden absolute top-[calc(100%+4px)] left-0 bg-white border border-gray-200 rounded w-48 shadow-lg z-50">
+                                    <div class="px-4 py-2 hover:bg-teal-50 cursor-pointer" onclick="selectOption('dobInput','dobDropdown','Birth Certificate')">Birth Certificate</div>
+                                    <div class="px-4 py-2 hover:bg-teal-50 cursor-pointer" onclick="selectOption('dobInput','dobDropdown','School Records')">School Records</div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="text-gray-500 text-xs block mb-1">Document Reference Id</label>
+                                <input type="text" class="custom-input" />
+                            </div>
+
+                            <div class="flex flex-col items-end">
+                                <div id="dobFileDisplay" class="text-xs text-gray-500 mb-1 max-w-full truncate hidden"></div>
+                                <div class="flex gap-2 items-center">
+                                    <button type="button" id="dobViewButton" class="hidden bg-gray-200 text-gray-700 px-4 py-1.5 rounded text-xs font-bold uppercase hover:bg-gray-300 transition-colors" data-blob-url="" onclick="viewBlob(this.getAttribute('data-blob-url'))">View</button>
+                                    <input 
+                                        type="file" 
+                                        id="dobFile"
+                                        class="hidden"
+                                        onchange="upload_handleFileUpload('dobFile', 'dobScore', 'dobFileDisplay', 'dobBrowseLabel', 'dobViewButton')"
+                                    />
+
+                                    <label 
+                                        for="dobFile"
+                                        id="dobBrowseLabel"
+                                        class="border border-pink-400 text-pink-400 px-6 py-2 rounded text-xs font-bold 
+                                            hover:bg-pink-50 transition-colors uppercase cursor-pointer select-none"
+                                    >
+                                        BROWSE
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="dobScore" class="w-full max-w-[500px] p-2 border border-gray-200 bg-gray-50 rounded-lg hidden items-center justify-between text-xs">
+                        <span class="text-gray-700 font-medium">Document Quality Score:</span>
+                        <span class="font-bold text-gray-700" data-score=""></span>
+                    </div>
+                </div>
+
+            </form>
+
+            <div class="flex justify-between mt-10 border-t border-gray-100 pt-6">
+                <a href="#" class="flex items-center text-gray-500 hover:text-gray-700 font-bold text-xs px-6 py-2.5 rounded transition border border-gray-300 hover:bg-gray-100 uppercase">
+                    Back
+                </a>
+                <button type="button"    onclick="submit_passport()"
+ class="bg-pink-custom hover-bg-pink-dark text-white text-xs font-bold py-2.5 px-10 rounded shadow transition uppercase">
+                    submit
+                </button>
+            </div>
+        </div>
+    </main>
+
+       <script src="./upload.js">
+        </script>
+
+</body>
+</html>

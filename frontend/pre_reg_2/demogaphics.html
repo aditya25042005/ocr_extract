@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demographics Details</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="./demographics.css">
+
+</head>
+<body class="flex flex-col min-h-screen text-sm">
+
+    <!-- Header -->
+    <header class="bg-teal-custom text-white px-6 py-2 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-8">
+                <!-- Logo -->
+                <div class="flex flex-col items-center cursor-pointer">
+                    <img src="./logo.png" alt="MOSIP Logo" class="h-8 w-8">
+                    <span class="text-[9px] font-bold tracking-widest mt-0.5">MOSIP</span>
+                </div>
+                
+                <!-- Nav Links -->
+                <nav class="hidden md:flex space-x-6 text-xs font-medium tracking-wide">
+                    <a href="#" class="hover:text-gray-200">GETTING STARTED</a>
+                    <a href="#" class="hover:text-gray-200">FAQ</a>
+                    <a href="#" class="hover:text-gray-200">CONTACT</a>
+                </nav>
+            </div>
+
+            <!-- Right Actions -->
+            <div class="flex items-center space-x-6 text-xs font-medium">
+                <a href="#" class="flex items-center hover:text-gray-200">
+                    <i class="far fa-folder mr-2"></i>
+                    Your Applications
+                </a>
+                <a href="#" class="flex items-center hover:text-gray-200">
+                    <i class="fas fa-power-off mr-2"></i>
+                    Logout
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto px-4 py-6 max-w-7xl">
+        
+        <!-- Progress Steps -->
+        <div class="flex items-center justify-center mb-6 px-4 overflow-x-auto scale-90 origin-top">
+            <div class="flex items-center whitespace-nowrap">
+                <i class="fas fa-file-alt text-xl text-gray-600 mr-2"></i>
+                <span class="text-blue-500 font-semibold text-base">Demographics Details</span>
+            </div>
+            
+            <div class="step-connector w-12 mx-4"></div>
+            
+            <div class="flex items-center text-gray-400 whitespace-nowrap">
+                <i class="fas fa-upload mr-2 text-sm"></i>
+                <span class="text-sm">Upload Document</span>
+            </div>
+
+            <div class="step-connector w-12 mx-4"></div>
+
+            <div class="flex items-center text-gray-400 whitespace-nowrap">
+                <i class="far fa-calendar-check mr-2 text-sm"></i>
+                <span class="text-sm">Book Appointment</span>
+            </div>
+
+            <div class="step-connector w-12 mx-4"></div>
+
+            <div class="flex items-center text-gray-400 whitespace-nowrap">
+                <i class="far fa-file-alt mr-2 text-sm"></i>
+                <span class="text-sm">Confirmation</span>
+            </div>
+        </div>
+
+        <!-- Form Card -->
+        <div class="bg-white rounded shadow-lg p-6 mb-10">
+            
+            <!-- Form Header -->
+            <div class="flex flex-col md:flex-row justify-between items-center mb-5 border-b border-pink-200 pb-3">
+                <h2 class="text-pink-custom text-lg font-medium mb-4 md:mb-0">
+                    Demographic Details ( English )
+                </h2>
+                <button class="bg-pink-custom text-white text-[10px] font-bold py-2 px-6 rounded shadow hover-bg-pink-dark transition uppercase tracking-wide">
+                    Change Data Capture Languages
+                </button>
+            </div>
+
+            <!-- Form Grid -->
+            <form id="demographicsForm">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+                    <!-- Row 1 -->
+                    <!-- Full Name -->
+                    <div class="border border-gray-300 rounded overflow-hidden flex flex-col h-24">
+                        <div class="bg-teal-custom text-white px-3 py-1.5 text-[13px] font-semibold flex justify-between items-center">
+                            <span>Full Name : *</span>
+                        </div>
+                        <div class="bg-white px-3 py-2 flex-grow flex items-end">
+                            <div class="w-full relative">
+                                <input type="text" placeholder="Full Name" class="custom-input">
+                                <i class="fas fa-keyboard absolute right-0 bottom-2 text-gray-400 text-xs"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Date Of Birth (Z-Index: 50) -->
+                    <div class="border border-gray-300 rounded flex flex-col h-24 relative z-50">
+                        <div class="bg-teal-custom text-white px-3 py-1.5 text-[13px] font-semibold rounded-t">
+                            Date Of Birth : *
+                        </div>
+                        <div class="bg-white px-3 py-2 flex-grow flex items-center justify-between rounded-b">
+                            <div class="w-5/12 relative">
+                                <input type="text" id="dobInput" placeholder="DD/MM/YYYY" class="custom-input text-center text-sm" onfocus="openDatePicker()">
+                                <button type="button" class="absolute right-0 bottom-2 text-gray-500 hover:text-gray-700 focus:outline-none" onclick="toggleDatePicker(event)">
+                                    <i class="far fa-calendar-alt text-sm"></i>
+                                </button>
+
+                                <!-- Custom Date Picker Dropdown -->
+                                <div id="datePickerDropdown" class="hidden absolute top-10 left-0 bg-white shadow-2xl rounded-lg p-4 w-72 border border-gray-200 z-50 select-none">
+                                    <!-- Header -->
+                                    <div class="flex justify-between items-center mb-4 px-2">
+                                        <div class="flex items-center cursor-pointer hover:bg-gray-100 px-2 py-1 rounded transition" onclick="toggleViewMode()">
+                                            <span id="currentMonthYear" class="font-bold text-gray-700 text-sm">JUN 2017</span>
+                                            <i id="headerCaret" class="fas fa-caret-down ml-2 text-gray-500 text-xs transition-transform duration-200"></i>
+                                        </div>
+                                        <div class="flex space-x-6 mr-2">
+                                            <button type="button" onclick="handlePrev()" class="text-gray-500 hover:text-gray-800 focus:outline-none p-1">
+                                                <i class="fas fa-chevron-left text-sm"></i>
+                                            </button>
+                                            <button type="button" onclick="handleNext()" class="text-gray-500 hover:text-gray-800 focus:outline-none p-1">
+                                                <i class="fas fa-chevron-right text-sm"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Days View Container -->
+                                    <div id="daysView">
+                                        <!-- Weekdays -->
+                                        <div class="grid grid-cols-7 gap-1 text-center mb-2">
+                                            <span class="text-xs text-gray-400 font-medium">Mo</span>
+                                            <span class="text-xs text-gray-400 font-medium">Tu</span>
+                                            <span class="text-xs text-gray-400 font-medium">We</span>
+                                            <span class="text-xs text-gray-400 font-medium">Th</span>
+                                            <span class="text-xs text-gray-400 font-medium">Fr</span>
+                                            <span class="text-xs text-gray-400 font-medium">Sa</span>
+                                            <span class="text-xs text-gray-400 font-medium">Su</span>
+                                        </div>
+
+                                        <!-- Days Grid -->
+                                        <div id="calendarGrid" class="grid grid-cols-7 gap-1 text-center text-sm">
+                                            <!-- Generated by JS -->
+                                        </div>
+                                    </div>
+
+                                    <!-- Years View Container -->
+                                    <div id="yearsView" class="hidden">
+                                        <div id="yearsGrid" class="grid grid-cols-4 gap-y-4 gap-x-2 text-center text-sm">
+                                            <!-- Generated by JS -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <span class="text-gray-500 text-xs font-bold">OR</span>
+                            <div class="w-5/12 flex items-end">
+                                <input type="number" id="ageInput" placeholder="Age" class="custom-input text-center text-sm" oninput="calculateDobFromAge()">
+                                <span class="ml-1 text-xs text-gray-500 pb-2">Years</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gender with Custom Search Dropdown (Z-Index: 50) -->
+                    <div class="border border-gray-300 rounded flex flex-col h-24 relative z-50">
+                        <div class="bg-teal-custom text-white px-3 py-1.5 text-[13px] font-semibold rounded-t">
+                            Gender : *
+                        </div>
+                        <div class="bg-white px-3 py-2 flex-grow flex items-end relative rounded-b">
+                            <!-- Custom Trigger -->
+                            <div class="w-full relative cursor-pointer" onclick="toggleDropdown('genderDropdown')">
+                                <input type="text" id="genderInput" placeholder="Select Gender" class="custom-input cursor-pointer" readonly>
+                                <i class="fas fa-chevron-down absolute right-0 bottom-2 text-gray-400 text-xs z-0 pointer-events-none"></i>
+                            </div>
+
+                            <!-- Custom Dropdown Menu -->
+                            <div id="genderDropdown" class="hidden absolute top-full left-0 w-full bg-white shadow-xl rounded-b z-50 border border-t-0 border-gray-200 max-h-56 flex flex-col mt-px">
+                                <div class="p-2 border-b border-gray-100 bg-gray-50">
+                                    <input type="text" placeholder="Search..." class="w-full text-sm text-gray-600 bg-white border border-gray-200 rounded px-2 py-1 outline-none focus:border-teal-500 transition-colors" onkeyup="filterDropdown(this, 'genderOptions')">
+                                </div>
+                                <div id="genderOptions" class="overflow-y-auto custom-scrollbar">
+                                    <div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors" onclick="selectOption('genderInput', 'genderDropdown', 'Male')">Male</div>
+                                    <div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors" onclick="selectOption('genderInput', 'genderDropdown', 'Female')">Female</div>
+                                    <div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors" onclick="selectOption('genderInput', 'genderDropdown', 'Others')">Others</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 2 -->
+                    <!-- Residence Status with Custom Search Dropdown (Z-Index: 40) -->
+                    <div class="border border-gray-300 rounded flex flex-col h-24 relative z-40">
+                        <div class="bg-teal-custom text-white px-3 py-1.5 text-[13px] font-semibold rounded-t">
+                            Residence Status : *
+                        </div>
+                        <div class="bg-white px-3 py-2 flex-grow flex items-end relative rounded-b">
+                            <!-- Custom Trigger -->
+                            <div class="w-full relative cursor-pointer" onclick="toggleDropdown('residenceDropdown')">
+                                <input type="text" id="residenceInput" placeholder="Select Residence Status" class="custom-input cursor-pointer" readonly>
+                                <i class="fas fa-chevron-down absolute right-0 bottom-2 text-gray-400 text-xs z-0 pointer-events-none"></i>
+                            </div>
+
+                            <!-- Custom Dropdown Menu -->
+                            <div id="residenceDropdown" class="hidden absolute top-full left-0 w-full bg-white shadow-xl rounded-b z-50 border border-t-0 border-gray-200 max-h-56 flex flex-col mt-px">
+                                <div class="p-2 border-b border-gray-100 bg-gray-50">
+                                    <input type="text" placeholder="Search..." class="w-full text-sm text-gray-600 bg-white border border-gray-200 rounded px-2 py-1 outline-none focus:border-teal-500 transition-colors" onkeyup="filterDropdown(this, 'residenceOptions')">
+                                </div>
+                                <div id="residenceOptions" class="overflow-y-auto custom-scrollbar">
+                                    <div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors" onclick="selectOption('residenceInput', 'residenceDropdown', 'Non-Foreigner')">Non-Foreigner</div>
+                                    <div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors" onclick="selectOption('residenceInput', 'residenceDropdown', 'Foreigner')">Foreigner</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Address -->
+                    <div class="border border-gray-300 rounded overflow-hidden flex flex-col h-24">
+                        <div class="bg-teal-custom text-white px-3 py-1.5 text-[13px] font-semibold">
+                            Address : *
+                        </div>
+                        <div class="bg-white px-3 py-2 flex-grow flex items-end">
+                            <div class="w-full relative">
+                                <input type="text" placeholder="Address" class="custom-input">
+                                <i class="fas fa-keyboard absolute right-0 bottom-2 text-gray-400 text-xs"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Region with Custom Search Dropdown (Z-Index: 40) -->
+                    <div class="border border-gray-300 rounded flex flex-col h-24 relative z-40">
+                        <div class="bg-teal-custom text-white px-3 py-1.5 text-[13px] font-semibold rounded-t">
+                            Region : *
+                        </div>
+                        <div class="bg-white px-3 py-2 flex-grow flex items-end relative rounded-b">
+                             <!-- Custom Trigger -->
+                            <div class="w-full relative cursor-pointer" onclick="toggleDropdown('regionDropdown')">
+                                <input type="text" id="regionInput" placeholder="Select Region" class="custom-input cursor-pointer" readonly>
+                                <i class="fas fa-chevron-down absolute right-0 bottom-2 text-gray-400 text-xs z-0 pointer-events-none"></i>
+                            </div>
+
+                            <!-- Custom Dropdown Menu -->
+                            <div id="regionDropdown" class="hidden absolute top-full left-0 w-full bg-white shadow-xl rounded-b z-50 border border-t-0 border-gray-200 max-h-56 flex flex-col mt-px">
+                                <div class="p-2 border-b border-gray-100 bg-gray-50">
+                                    <input type="text" placeholder="Search..." class="w-full text-sm text-gray-600 bg-white border border-gray-200 rounded px-2 py-1 outline-none focus:border-teal-500 transition-colors" onkeyup="filterDropdown(this, 'regionOptions')">
+                                </div>
+                                <div id="regionOptions" class="overflow-y-auto custom-scrollbar">
+                                    <div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors" onclick="selectOption('regionInput', 'regionDropdown', 'Bihar')">Bihar</div>
+                                    <!-- <div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors" onclick="selectOption('regionInput', 'regionDropdown', 'South')">South</div>
+                                    <div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors" onclick="selectOption('regionInput', 'regionDropdown', 'East')">East</div>
+                                    <div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors" onclick="selectOption('regionInput', 'regionDropdown', 'West')">West</div> -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 3 -->
+                    <!-- Province with Custom Search Dropdown (Z-Index: 30) -->
+                         <div class="border border-gray-300 rounded overflow-hidden flex flex-col h-24">
+                        <div class="bg-teal-custom text-white px-3 py-1.5 text-[13px] font-semibold flex justify-between items-center">
+                            <span>Province : *</span>
+                        </div>
+                        <div class="bg-white px-3 py-2 flex-grow flex items-end">
+                            <div class="w-full relative">
+                                <input id="state" type="text" placeholder="Full Name" class="custom-input">
+                                <i class="fas fa-keyboard absolute right-0 bottom-2 text-gray-400 text-xs"></i>
+                            </div>
+                        </div>
+                    </div>
+                   
+
+                    <!-- City with Custom Search Dropdown (Z-Index: 30) -->
+                    <div class="border border-gray-300 rounded flex flex-col h-24 relative z-30">
+                        <div class="bg-teal-custom text-white px-3 py-1.5 text-[13px] font-semibold rounded-t">
+                            City : *
+                        </div>
+                        <div class="bg-white px-3 py-2 flex-grow flex items-end relative rounded-b">
+                            <!-- Custom Trigger -->
+                            <div class="w-full relative cursor-pointer" onclick="toggleDropdown('cityDropdown')">
+                                <input type="text" id="cityInput" placeholder="Select City" class="custom-input cursor-pointer" readonly>
+                                <i class="fas fa-chevron-down absolute right-0 bottom-2 text-gray-400 text-xs z-0 pointer-events-none"></i>
+                            </div>
+
+                             <!-- Custom Dropdown Menu -->
+                             <div id="cityDropdown" class="hidden absolute top-full left-0 w-full bg-white shadow-xl rounded-b z-50 border border-t-0 border-gray-200 max-h-56 flex flex-col mt-px">
+                                <div class="p-2 border-b border-gray-100 bg-gray-50">
+                                    <input type="text" placeholder="Search..." class="w-full text-sm text-gray-600 bg-white border border-gray-200 rounded px-2 py-1 outline-none focus:border-teal-500 transition-colors" onkeyup="filterDropdown(this, 'cityOptions')">
+                                </div>
+                                <div id="cityOptions" class="overflow-y-auto custom-scrollbar">
+                                    <div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors" onclick="selectOption('cityInput', 'cityDropdown', ' Rabat')"> nalanda</div>
+                                    <div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors" onclick="selectOption('cityInput', 'cityDropdown', 'Kenitra')">Kottayam</div>
+                                    <div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors" onclick="selectOption('cityInput', 'cityDropdown', 'Mumbai')">Mumbai</div>
+<div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors" onclick="selectOption('cityInput', 'cityDropdown', 'Delhi')">Delhi</div>
+<div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors" onclick="selectOption('cityInput', 'cityDropdown', 'Bengaluru')">Bengaluru</div>
+<div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors" onclick="selectOption('cityInput', 'cityDropdown', 'Hyderabad')">Hyderabad</div>
+<div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors" onclick="selectOption('cityInput', 'cityDropdown', 'Chennai')">Chennai</div>
+<div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors" onclick="selectOption('cityInput', 'cityDropdown', 'Kolkata')">Kolkata</div>
+<div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors" onclick="selectOption('cityInput', 'cityDropdown', 'Ahmedabad')">Ahmedabad</div>
+<div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors" onclick="selectOption('cityInput', 'cityDropdown', 'Pune')">Pune</div>
+<div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors" onclick="selectOption('cityInput', 'cityDropdown', 'Jaipur')">Jaipur</div>
+<div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors" onclick="selectOption('cityInput', 'cityDropdown', 'Surat')">Surat</div>
+<div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors" onclick="selectOption('cityInput', 'cityDropdown', 'Lucknow')">Lucknow</div>
+<div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors" onclick="selectOption('cityInput', 'cityDropdown', 'Kanpur')">Kanpur</div>
+<div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors" onclick="selectOption('cityInput', 'cityDropdown', 'Nagpur')">Nagpur</div>
+<div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors" onclick="selectOption('cityInput', 'cityDropdown', 'Indore')">Indore</div>
+<div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors" onclick="selectOption('cityInput', 'cityDropdown', 'Patna')">Patna</div>
+                                    
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Zone with Custom Search Dropdown (Z-Index: 30) -->
+                    <div class="border border-gray-300 rounded flex flex-col h-24 relative z-30">
+    <div class="bg-teal-custom text-white px-3 py-1.5 text-[13px] font-semibold rounded-t">
+        Zone : *
+    </div>
+
+    <div class="bg-white px-3 py-2 flex-grow flex items-end relative rounded-b">
+        <!-- Custom Trigger -->
+        <div class="w-full relative cursor-pointer" onclick="toggleDropdown('zoneDropdown')">
+            <input type="text" id="zoneInput" placeholder="Select Zone" class="custom-input cursor-pointer" readonly>
+            <i class="fas fa-chevron-down absolute right-0 bottom-2 text-gray-400 text-xs z-0 pointer-events-none"></i>
+        </div>
+
+        <!-- Custom Dropdown Menu -->
+        <div id="zoneDropdown"
+             class="hidden absolute top-full left-0 w-full bg-white shadow-xl rounded-b z-50 border border-t-0 border-gray-200 max-h-56 flex flex-col mt-px">
+
+            <div class="p-2 border-b border-gray-100 bg-gray-50">
+                <input type="text" placeholder="Search..."
+                       class="w-full text-sm text-gray-600 bg-white border border-gray-200 rounded px-2 py-1 outline-none focus:border-teal-500 transition-colors"
+                       onkeyup="filterDropdown(this, 'zoneOptions')">
+            </div>
+
+            <!-- Options -->
+            <div id="zoneOptions" class="overflow-y-auto custom-scrollbar">
+
+              <div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors"
+     onclick="selectOption('zoneInput', 'zoneDropdown', 'Connaught Place')">Connaught Place</div>
+
+<div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors"
+     onclick="selectOption('zoneInput', 'zoneDropdown', 'Chanakyapuri')">Chanakyapuri</div>
+
+<div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors"
+     onclick="selectOption('zoneInput', 'zoneDropdown', 'Karol Bagh')">Karol Bagh</div>
+
+<div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors"
+     onclick="selectOption('zoneInput', 'zoneDropdown', 'Lajpat Nagar')">Lajpat Nagar</div>
+
+<div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors"
+     onclick="selectOption('zoneInput', 'zoneDropdown', 'Hauz Khas')">Hauz Khas</div>
+
+<div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors"
+     onclick="selectOption('zoneInput', 'zoneDropdown', 'Vasant Kunj')">Vasant Kunj</div>
+
+<div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors"
+     onclick="selectOption('zoneInput', 'zoneDropdown', 'Dwarka')">Dwarka</div>
+
+<div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors"
+     onclick="selectOption('zoneInput', 'zoneDropdown', 'Nehru Place')">Nehru Place</div>
+
+<div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors"
+     onclick="selectOption('zoneInput', 'zoneDropdown', 'Chandni Chowk')">Chandni Chowk</div>
+
+<div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors"
+     onclick="selectOption('zoneInput', 'zoneDropdown', 'Greater Kailash I')">Greater Kailash I</div>
+
+<div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors"
+     onclick="selectOption('zoneInput', 'zoneDropdown', 'Defence Colony')">Defence Colony</div>
+
+<div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors"
+     onclick="selectOption('zoneInput', 'zoneDropdown', 'Saket')">Saket</div>
+
+<div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors"
+     onclick="selectOption('zoneInput', 'zoneDropdown', 'Okhla Industrial Area')">Okhla Industrial Area</div>
+
+<div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors"
+     onclick="selectOption('zoneInput', 'zoneDropdown', 'Paharganj')">Paharganj</div>
+
+<div class="px-4 py-2 hover:bg-teal-50 hover:text-teal-700 cursor-pointer text-gray-700 text-sm transition-colors"
+     onclick="selectOption('zoneInput', 'zoneDropdown', 'Civil Lines')">Civil Lines</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+                    <!-- Row 4 -->
+               <div class="border border-gray-300 rounded overflow-hidden flex flex-col h-24">
+                        <div class="bg-teal-custom text-white px-3 py-1.5 text-[13px] font-semibold flex justify-between items-center">
+                            <span>Postal code : *</span>
+                        </div>
+                        <div class="bg-white px-3 py-2 flex-grow flex items-end">
+                            <div class="w-full relative">
+                                <input type="text" placeholder="Full Name" class="custom-input" id="pin">
+                                <i class="fas fa-keyboard absolute right-0 bottom-2 text-gray-400 text-xs"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Phone -->
+                    <div class="border border-gray-300 rounded overflow-hidden flex flex-col h-24">
+                        <div class="bg-teal-custom text-white px-3 py-1.5 text-[13px] font-semibold">
+                            Phone : *
+                        </div>
+                        <div class="bg-white px-3 py-2 flex-grow flex items-end">
+                            <input type="tel" placeholder="Phone" class="custom-input">
+                        </div>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="border border-gray-300 rounded overflow-hidden flex flex-col h-24">
+                        <div class="bg-teal-custom text-white px-3 py-1.5 text-[13px] font-semibold">
+                            Email : *
+                        </div>
+                        <div class="bg-white px-3 py-2 flex-grow flex items-end">
+                            <input  id="email" type="email" placeholder="Email" class="custom-input">
+                        </div>
+                    </div>
+
+                </div>
+            </form>
+
+            <!-- Footer Action -->
+            <!-- Footer Action -->
+<div class="mt-8 border-t border-gray-100 pt-6">
+  
+  <div class="flex flex-col md:flex-row justify-between items-start gap-6">
+
+    <!-- Auto Fill / Upload Card -->
+    <div class="card bg-white p-4 rounded shadow-md w-full md:w-[360px]">
+      <h2 class="text-sm font-bold mb-4 text-gray-700">Upload Document</h2>
+
+      <!-- File Upload -->
+      <label for="fileInput" class="block text-xs font-semibold mb-1">
+        Choose File
+      </label>
+      <input
+        type="file"
+        id="fileInput"
+        class="block w-full text-sm mb-4"
+      />
+
+      <!-- Dropdown -->
+      <label for="docType" class="block text-xs font-semibold mb-1">
+        Document Type
+      </label>
+      <select
+        id="docType"
+        class="block w-full border border-gray-300 rounded px-2 py-1 text-sm mb-4"
+      >
+        <option value="">Select Type</option>
+        <option value="handwritten">Handwritten</option>
+        <option value="printed">Printed</option>
+      </select>
+
+
+
+      <!-- Submit -->
+      <button
+        onclick="auto_fill()"
+        class="bg-teal-custom text-white text-xs font-bold px-4 py-2 rounded hover:opacity-90"
+      >
+        AUTO_FILL
+      </button>
+    </div>
+
+  <div id="img_viewer" class="img-viewer">
+ 
+  <canvas id="overlayCanvas"></canvas>
+</div>
+
+    <!-- Continue Button -->
+    <div class="flex items-end justify-end w-full md:w-auto">
+      <a href="./upload.html">
+        <button
+          type="button"
+          class="bg-pink-custom hover-bg-pink-dark text-white text-sm font-bold py-2.5 px-10 rounded shadow transition"
+        >
+          CONTINUE
+        </button>
+      </a>
+    </div>
+
+  </div>
+</div>
+
+        </div>
+      
+
+    </main>
+
+    <script src="./demographic.js">
+      
+    
+    </script>
+      <script src="./upload.js">
+        </script>
+</body>
+</html>
