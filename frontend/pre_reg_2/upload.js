@@ -14,7 +14,7 @@
             }
         }
 
-        function selectOption(inputId, dropdownId, value) {
+        function upload_selectOption(inputId, dropdownId, value) {
             document.getElementById(inputId).value = value;
             document.getElementById(dropdownId).classList.add('hidden');
         }
@@ -59,6 +59,11 @@
                 alert('No document selected to view.');
             }
         }
+        // Variables to hold uploaded files
+let name_gender_proof = null;
+let address_proof = null;
+let porFile = null;
+let dob_proof = null;
 
         // Handles file input change, generates Blob URL, and updates UI
         function upload_handleFileUpload(fileInputId, scoreElementId, displayElementId, browseLabelId, viewButtonId) {
@@ -76,6 +81,10 @@
 
             if (fileInput.files.length > 0) {
                 const file = fileInput.files[0];
+                 if (documentId === "poi") name_gender_proof = file;
+        if (documentId === "poa") address_proof = file;
+        if (documentId === "por") porFile = file;
+        if (documentId === "dob") dob_proof= file;
                 const fileName = file.name;
 
                 // --- 1. CREATE BLOB URL ---
@@ -129,25 +138,45 @@
                 });
             }
         });
+function formatDateToYYYYMMDD(dateStr) {
+  if (!dateStr) return "";
+
+  // expected input: DD-MM-YYYY or DD/MM/YYYY
+  const parts = dateStr.includes("-")
+    ? dateStr.split("-")
+    : dateStr.split("/");
+
+  const [dd, mm, yyyy] = parts;
+  return `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
+}
 
 function submit_passport() {
   const data = new FormData();
 
   // -------- BASIC FIELDS --------
-  data.append("first_name", document.querySelector('input[placeholder="Full Name"]').value);
+  const parts= document.querySelector('input[placeholder="Full Name"]').value
+    const [first,last] = parts;
+
+  data.append("first_name", first);
+    data.append("last_name", last);
+
   data.append("gender", document.getElementById("genderInput").value);
-  data.append("dob", document.getElementById("dobInput").value);
+  console.log(document.getElementById("genderInput").value)
+  data.append("dob", formatDateToYYYYMMDD(document.getElementById("dobInput").value));
+
   data.append("phone", document.querySelector('input[type="tel"]').value);
   data.append("email", document.getElementById("email").value);
 
   // -------- ADDRESS --------
-  data.append("address", document.querySelector('input[placeholder="Address"]').value);
-  data.append("region", document.getElementById("regionInput").value);
-  data.append("city", document.getElementById("cityInput").value);
+  data.append("present_address_line", document.querySelector('input[placeholder="Address"]').value);
+  //data.append("region", document.getElementById("regionInput").value);
+  data.append("present_city", document.getElementById("cityInput").value);
   data.append("zone", document.getElementById("zoneInput").value);
-  data.append("province", document.getElementById("state").value);
-  data.append("postal_code", document.getElementById("pin").value);
-
+  data.append("present_state", document.getElementById("state").value);
+  data.append("present_pincode", document.getElementById("pin").value);
+ if (name_gender_proof) data.append("name_gender_proof",name_gender_proof );
+    if (address_proof) data.append("address_proof", address_proof);
+    if (dob_proof) data.append("dob_proof", dob_proof);
   // -------- FILE --------
   const fileInput = document.getElementById("fileInput");
   if (fileInput.files.length > 0) {
@@ -172,4 +201,60 @@ function submit_passport() {
 .catch(err => {
   console.error(err);
 });
+}
+
+
+function verify_passport() {
+    const data = new FormData();
+
+    // -------- BASIC FIELDS --------
+    const parts = document.querySelector('input[placeholder="Full Name"]').value.split(" ");
+    const first = parts[0] || "";
+    const last = parts.slice(1).join(" ") || "";
+
+    data.append("first_name", first);
+    data.append("last_name", last);
+    data.append("gender", document.getElementById("genderInput").value);
+    data.append("dob", formatDateToYYYYMMDD(document.getElementById("dobInput").value));
+    data.append("phone", document.querySelector('input[type="tel"]').value);
+    data.append("email", document.getElementById("email").value);
+
+    // -------- ADDRESS --------
+    data.append("permanent_address_line", document.querySelector('input[placeholder="Address"]').value);
+    data.append("permanent_city", document.getElementById("cityInput").value);
+    data.append("permanent_country", document.getElementById("zoneInput").value);
+    data.append("permanent_state", document.getElementById("state").value);
+    data.append("permanent_pincode", document.getElementById("pin").value);
+   //data.append("permanent_country", document.getElementById("pin").value);
+
+
+    // -------- FILES --------
+    if (name_gender_proof) data.append("name_gender_proof", name_gender_proof);
+    if (address_proof) data.append("address_proof", address_proof);
+    if (dob_proof) data.append("dob_proof", dob_proof);
+    if (poiFile) data.append("poiFile", poiFile);
+    if (poaFile) data.append("poaFile", poaFile);
+    if (porFile) data.append("porFile", porFile);
+    if (dobFile) data.append("dobFile", dobFile);
+
+    // -------- DEBUG --------
+    console.log("Verify Passport Data:");
+    for (let pair of data.entries()) {
+        console.log(pair[0], pair[1]);
+    }
+
+    // -------- OPTIONAL API CALL --------
+    // If you have a verification endpoint, you can send this FormData
+    fetch("http://127.0.0.1:8000/api/verify-documents/", {
+        method: "POST",
+        body: data
+    })
+    .then(res => res.json())
+    .then(resp => {
+        console.log("Verification Response:", resp);
+        alert("Passport data verified successfully!");
+    })
+    .catch(err => {
+        console.error("Verification Error:", err);
+    });
 }

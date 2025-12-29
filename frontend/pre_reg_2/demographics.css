@@ -92,3 +92,24 @@
 #overlayCanvas:hover {
   transform: scale(1.02);
 }
+
+
+.page {
+  width: 100%;
+  min-height: calc(100vh - 80px);
+  transition: transform 0.4s ease, opacity 0.4s ease;
+}
+
+.page.hidden {
+  display: none;
+}
+
+.page.slide-out {
+  transform: translateX(-100%);
+  opacity: 0;
+}
+
+.page.slide-in {
+  transform: translateX(0);
+  opacity: 1;
+}

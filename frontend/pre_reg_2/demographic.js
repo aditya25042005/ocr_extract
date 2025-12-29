@@ -18,6 +18,7 @@
 
         function selectOption(inputId, dropdownId, value) {
             document.getElementById(inputId).value = value;
+            console.log(value,"d")
             document.getElementById(dropdownId).classList.add('hidden');
         }
 
@@ -489,24 +490,35 @@ function loadImageToCanvas(file) {
 }
 
 
-/////////
-let currentPage = 0;
+////
 
-function nextPage() {
-  currentPage = 1;
-  document.getElementById("container").style.transform =
-    "translateX(-100vw)";
-  history.pushState({ page: 1 }, "", "#upload");
+
+function goToPage(page) {
+  const demographics = document.getElementById("page-demographics");
+  const upload = document.getElementById("page-upload");
+
+  if (page === "upload") {
+    demographics.classList.add("hidden");
+    upload.classList.remove("hidden");
+    location.hash = "upload";
+  }
+
+  if (page === "demographics") {
+    upload.classList.add("hidden");
+    demographics.classList.remove("hidden");
+    location.hash = "demographics";
+  }
 }
 
-function prevPage() {
-  currentPage = 0;
-  document.getElementById("container").style.transform =
-    "translateX(0vw)";
-  history.pushState({ page: 0 }, "", "#demographic");
-}
-// Handle browser back button
-window.onpopstate = function (event) {
-  if (event.state?.page === 1) nextPage();
-  else prevPage();
-};
+// Handle refresh / back button
+window.addEventListener("load", () => {
+  if (location.hash === "#upload") {
+    goToPage("upload");
+  }
+});
+
+window.addEventListener("popstate", () => {
+  if (location.hash === "#upload") goToPage("upload");
+  else goToPage("demographics");
+});
+ 
