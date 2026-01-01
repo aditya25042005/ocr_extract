@@ -113,3 +113,36 @@
   transform: translateX(0);
   opacity: 1;
 }
+
+
+ .doc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+  }
+
+  .doc-box {
+    position: relative;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+    background: #fff;
+  }
+
+  .doc-title {
+    font-weight: 600;
+    margin-bottom: 8px;
+    text-align: center;
+  }
+
+  .doc-image {
+    width: 100%;
+    display: block;
+  }
+
+  .doc-canvas {
+    position: absolute;
+    top: 36px; /* below title */
+    left: 10px;
+    pointer-events: none;
+  }

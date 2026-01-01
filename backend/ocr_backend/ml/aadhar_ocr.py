@@ -9,11 +9,13 @@ from transformers import TrOCRProcessor, VisionEncoderDecoderModel
 from craft_text_detector import Craft
 
 # --- 1. CONFIGURATION ---
-IMAGE_PATH = 'aad.pdf'
+IMAGE_PATH = 'aad.jpg'
 USE_GPU = torch.cuda.is_available()
 device = "cuda" if USE_GPU else "cpu"
 # Update your poppler path if needed
-POPPLER_PATH = r'D:\ELHAN\MOSIP\poppler-25.12.0\Library\bin'
+# POPPLER_PATH = r'D:\ELHAN\MOSIP\poppler-25.12.0\Library\bin'
+POPPLER_PATH = "/opt/homebrew/bin"
+
 
 print(f"Loading TrOCR on {device.upper()}...")
 processor = TrOCRProcessor.from_pretrained('microsoft/trocr-large-printed')
@@ -23,28 +25,51 @@ print("Loading CRAFT...")
 craft = Craft(output_dir=None, crop_type="box", cuda=USE_GPU)
 
 # --- 2. HELPER: PDF / IMAGE LOADER ---
-def load_file_as_numpy_image(file_path):
-    ext = os.path.splitext(file_path)[1].lower()
+# def load_file_as_numpy_image(file_path):
+#     ext = os.path.splitext(file_path)[1].lower()
+#     print("DEBUG FILE PATH:", file_path)
+#     print("DEBUG EXT:", ext)
+
+#     if ext == '.pdf':
+#         print(f"Detected PDF: {file_path}. Converting to image...")
+#         try:
+#             pages = convert_from_path(file_path, dpi=300, poppler_path=POPPLER_PATH, last_page=1)
+#             if not pages: return None
+#             img = np.array(pages[0].convert("RGB"))
+#             return np.ascontiguousarray(img)
+#         except Exception as e:
+#             print(f"PDF Conversion Error: {e}")
+#             return None
+
+#     elif ext in ['.jpg', '.jpeg', '.png', '.bmp']:
+#         print(f"Detected Image: {file_path}")
+#         img = Image.open(file_path).convert("RGB")
+#         return np.ascontiguousarray(np.array(img))
     
-    if ext == '.pdf':
-        print(f"Detected PDF: {file_path}. Converting to image...")
+#     else:
+#         print(f"Unsupported file format: {ext}")
+#         return None
+
+def load_file_as_numpy_image(file_path):
+    # 1. Try PDF
+    if file_path.lower().endswith(".pdf"):
         try:
             pages = convert_from_path(file_path, dpi=300, poppler_path=POPPLER_PATH, last_page=1)
-            if not pages: return None
-            img = np.array(pages[0].convert("RGB"))
-            return np.ascontiguousarray(img)
+            if pages:
+                img = np.array(pages[0].convert("RGB"))
+                return np.ascontiguousarray(img)
         except Exception as e:
-            print(f"PDF Conversion Error: {e}")
-            return None
+            print("PDF Error:", e)
 
-    elif ext in ['.jpg', '.jpeg', '.png', '.bmp']:
-        print(f"Detected Image: {file_path}")
+    # 2. Try image (supports files WITHOUT extension)
+    try:
+        print(f"Trying to load as image: {file_path}")
         img = Image.open(file_path).convert("RGB")
         return np.ascontiguousarray(np.array(img))
-    
-    else:
-        print(f"Unsupported file format: {ext}")
+    except Exception as e:
+        print("Image load error:", e)
         return None
+
 
 # --- 3. HELPER: OCR READ WITH CONFIDENCE ---
 def read_crop_with_confidence(pil_image, box):

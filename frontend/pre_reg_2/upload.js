@@ -204,6 +204,43 @@ function submit_passport() {
 }
 
 
+
+function drawBoundingBoxes(image, fields) {
+  const canvas = document.getElementById("overlayCanvas");
+  const ctx = canvas.getContext("2d");
+
+
+  canvas.width = image.naturalWidth;
+  canvas.height = image.naturalHeight;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(image, 0, 0);
+
+  Object.entries(fields).forEach(([key, field]) => {
+    if (!field.coordinates) return;
+
+    const [x1, x2, y1, y2] = field.coordinates;
+
+    const x = Math.min(x1, x2);
+    const y = Math.min(y1, y2);
+    const w = Math.abs(x2 - x1);
+    const h = Math.abs(y2 - y1);
+
+    // Color based on confidence
+    ctx.strokeStyle =
+      field.confidence_score > 0.9 ? "green" :
+      field.confidence_score > 0.7 ? "orange" : "red";
+
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x, y, w, h);
+
+    ctx.fillStyle = ctx.strokeStyle;
+    ctx.font = "30px Arial";
+  //  ctx.fillText(key, x, y - 5);
+       ctx.fillText(`${fields[key].confidence_score*100}%` ,(x2+10) , (y1+y2)/2);
+          ctx.fillText(key ,x2+10 ,(y1+y2)/2+30);
+  });
+}
 function verify_passport() {
     const data = new FormData();
 
@@ -220,6 +257,8 @@ function verify_passport() {
     data.append("email", document.getElementById("email").value);
 
     // -------- ADDRESS --------
+    data.append("present_country", document.getElementById("regionInput").value);
+
     data.append("permanent_address_line", document.querySelector('input[placeholder="Address"]').value);
     data.append("permanent_city", document.getElementById("cityInput").value);
     data.append("permanent_country", document.getElementById("zoneInput").value);
@@ -251,10 +290,117 @@ function verify_passport() {
     })
     .then(res => res.json())
     .then(resp => {
+           const r = resp.verification_result;
+
+// NAME + GENDER
+renderDocument(
+  name_gender_proof,
+  "img-name-gender",
+  "canvas-name-gender",
+  {
+      first_name: {
+    label: "FIRST NAME",
+    ...r.first_name
+  },
+  gender: {
+    label: "GENDER",
+    ...r.gender
+  },
+  last_name: {
+    label: "LAST NAME",
+    ...r.last_name
+  }
+  }
+);
+
+// DOB
+renderDocument(
+  dob_proof,
+  "img-dob",
+  "canvas-dob",
+  {
+    date_of_birth:{
+        label:'DOB',
+       ...  r.date_of_birth
+    }
+  }
+);
+
+// ADDRESS  //problem-sent to elhan
+renderDocument(
+  address_proof,
+  "img-address",
+  "canvas-address",
+  r.address
+);
+
+
+     
+        
         console.log("Verification Response:", resp);
         alert("Passport data verified successfully!");
     })
     .catch(err => {
         console.error("Verification Error:", err);
     });
+}
+function pickFields(result, keys) {
+  const fields = {};
+  keys.forEach(k => {
+    if (result[k]?.coordinates) {
+      fields[k] = result[k];
+    }
+  });
+  return fields;
+}
+
+
+function renderDocument(file, imgId, canvasId, fields) {
+  if (!file) return;
+
+  const img = document.getElementById(imgId);
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext("2d");
+
+  img.src = URL.createObjectURL(file);
+
+  img.onload = () => {
+    canvas.width = img.clientWidth;
+    canvas.height = img.clientHeight;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const scaleX = canvas.width / img.naturalWidth;
+    const scaleY = canvas.height / img.naturalHeight;
+
+    Object.values(fields).forEach( field => {
+      const [x1, y1, x2, y2] = field.coordinates;
+
+      ctx.strokeStyle = "lime";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(
+        x1 * scaleX,
+        y1 * scaleY,
+        (x2 - x1) * scaleX,
+        (y2 - y1) * scaleY
+      );
+       const rx = x1 * scaleX;
+      const ry = y1 * scaleY;
+      const rw = (x2 - x1) * scaleX;
+      const rh = (y2 - y1) * scaleY;
+
+     
+  ctx.fillStyle = "lime";
+      ctx.font = "16px Arial";
+
+      const label = `${field.label || field.name || "FIELD"} ${Math.round(
+        (field.match_score || 0) * 100
+      )}%`;
+
+      ctx.fillText(label, rx, ry - 5);
+
+  });
+      URL.revokeObjectURL(img.src);
+
+}
 }
