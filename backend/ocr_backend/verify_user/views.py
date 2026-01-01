@@ -80,7 +80,7 @@ def verify_otp(req):
 
 @api_view(['POST'])
 def aadhar_ocr_view(request):
-    from ML.aadhar_ocr import extract_aadhar_smart
+    from ml.aadhar_ocr import extract_fields_with_coords, run_ocr_pipeline
 
     # Case 1: Cloudinary URL
     if "url" in request.data:
@@ -92,8 +92,11 @@ def aadhar_ocr_view(request):
             temp_file.write(resp.content)
             temp_path = temp_file.name
 
-        result = extract_aadhar_smart(temp_path)
-        return Response(result)
+        ocr_lines = run_ocr_pipeline(temp_path)
+        if ocr_lines:
+            result = extract_fields_with_coords(ocr_lines)
+            return Response(result)
+        return Response({"message": "error in image detection"}, status=400)
 
     # Case 2: File upload
     file = request.FILES.get("file")
@@ -107,13 +110,16 @@ def aadhar_ocr_view(request):
             temp_file.write(chunk)
         temp_path = temp_file.name
 
-    result = extract_aadhar_smart(temp_path)
-    return Response(result)
+    ocr_lines = run_ocr_pipeline(temp_path)
+    if ocr_lines:
+        result = extract_fields_with_coords(ocr_lines)
+        return Response(result)
+    return Response ({"error": "error in pdf parsing"}, status= 400)
 
 
 @api_view(['POST'])
 def handwritten_ocr_view(request):
-    from ML.handwritten_ocr import handwritten_extract
+    from ml.handwritten_ocr import handwritten_extract
 
     file = request.FILES.get("file")
     if not file:
@@ -136,7 +142,7 @@ def handwritten_ocr_view(request):
 
 class DocumentVerifyView(APIView):
     def post(self, request):
-        from ML.doc_verification import DocumentVerifier
+        from ml.doc_verification import DocumentVerifier
         from .serializers import DocumentVerifySerializer
 
         serializer = DocumentVerifySerializer(data=request.data)
@@ -185,7 +191,7 @@ class DocumentVerifyView(APIView):
             "last_name": data["last_name"],
             "gender": data["gender"],
             "dob": data["dob"],
-            "address_line": data["permanent_address_line"],
+            "address_line1": data["permanent_address_line"],
             "city": data["permanent_city"],
             "state": data["permanent_state"],
             "pincode": data["permanent_pincode"],
@@ -219,7 +225,7 @@ class DocumentVerifyView(APIView):
 
 @api_view(['POST'])
 def AadharDetectView(request):
-    from ML.aadhaar_detector import is_aadhaar  
+    from ml.aadhaar_detector import is_aadhaar  
 
     file = request.FILES.get("file")
     if not file:
@@ -246,7 +252,7 @@ def AadharDetectView(request):
 
 @api_view(['POST'])
 def quality_score_view(request):
-    from ML.quality_score import process_uploaded_file, calc_scores
+    from ml.quality_score import process_uploaded_file, calc_scores
 
     file = request.FILES.get("file")
     if not file:
