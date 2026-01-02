@@ -1,0 +1,182 @@
+.nav-header {
+  font-family: "Montserrat", sans-serif;
+  font-weight: 500;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  height: min(100px, 15vh);
+  justify-content: space-between;
+  padding-left: 50px;
+  padding-right: 50px;
+  margin: 0px;
+  background-color: #ffffff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid #eaeaea;
+}
+
+.ui {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(to bottom, #f8f9fa, #eef2f3);
+}
+
+.nav-title1 {
+  display: flex;
+  gap: 8px;
+  font-weight: 900;
+  justify-content: space-around;
+  margin-bottom: 10px;
+  color: #1a3b5d;
+}
+
+.nav-title2 {
+  color: #1a3b5d;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media screen and (max-width: 600px) {
+  .nav-header {
+    height: 100px;
+    padding-left: 0;
+    padding-right: 0;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .nav-title1 {
+    margin-bottom: 10px;
+  }
+}
+
+/* --- MAIN BOX STYLES --- */
+.login-box {
+  margin-inline: auto;
+  margin-top: 100px; /* Reduced top margin slightly */
+  width: min(600px, 80vw);
+  
+  /* CHANGED: Use auto height so content fits */
+  height: auto; 
+  min-height: 500px;
+  
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  /* CHANGED: Justify 'start' with gap looks better with more content */
+  justify-content: flex-start; 
+  align-items: center;
+  
+  padding-block: 40px; /* Reduced padding slightly */
+  box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.1); /* Softer shadow */
+  background: white; /* Ensure white bg */
+  gap: 25px;
+}
+
+/* --- NEW HEADER STYLES --- */
+.box-header {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.icon-bg {
+    width: 70px;
+    height: 70px;
+    background-color: #f0f4f8;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.header-title {
+    font-family: "Montserrat", sans-serif;
+    color: #1a3b5d;
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.header-desc {
+    color: #64748b;
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+/* --- INPUT PARTS --- */
+.box-part1 {
+  width: 100%; /* Allow label to be full width */
+  margin-bottom: 10px;
+  text-align: left; /* Align label to left looks more standard */
+  font-family: "Montserrat", sans-serif; /* Consistent font */
+  font-size: 16px;
+  font-weight: 600;
+  color: #334155;
+  padding-left: 5px;
+}
+
+.login-box-section {
+    width: 80%; /* Control width of inputs here */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.input-hint {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    align-self: flex-start;
+    margin-top: 5px;
+    margin-left: 5px;
+}
+
+/* --- BUTTON --- */
+.login-button {
+  padding-block: 12px;
+  padding-inline: 40px;
+  border-radius: 6px; /* Slightly squarer looks more official */
+  box-shadow: 0px 4px 10px rgba(26, 59, 93, 0.3);
+  background-color: #1a3b5d;
+  color: white;
+  border: none;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.login-button:active {
+    transform: scale(0.98);
+}
+
+/* --- NEW FOOTER STYLES --- */
+.box-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+.footer-link {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #1a3b5d;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.blue-text {
+    color: #1a3b5d;
+    font-weight: 600;
+    cursor: pointer;
+}

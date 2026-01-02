@@ -1,0 +1,85 @@
+/* --- Styles for the New Selection/Dropdown Page --- */
+
+/* Page container adjustment for this specific page if needed */
+.selection-page-bg {
+    /* Ensures centering is maintained, adjust padding-top if no header is present */
+    padding-top: 100px;
+}
+
+/* Card/Panel for the selection form, inspired by .status-content-card */
+.selection-card {
+    background-color: white;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 450px;
+    text-align: center;
+}
+
+.selection-title {
+    color: #0D47A1; /* Deep Official Blue */
+    margin-bottom: 10px;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.selection-subtitle {
+    color: #546e7a; /* Muted grey, matching .page-title3 */
+    margin-bottom: 30px;
+    font-size: 16px;
+}
+
+.selection-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Custom styling for the Select element to match the theme */
+.custom-select-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+.themed-dropdown {
+    width: 100%;
+    padding: 10px 15px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 16px;
+    color: #37474f; /* Dark text */
+    background-color: white;
+    appearance: none; /* Hide default arrow for custom styling */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    cursor: pointer;
+    
+    /* Optional: Add custom arrow using background image or pseudo-element */
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="%231a3b5d"><path d="M7 10l5 5 5-5z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 10px top 50%;
+    background-size: 18px;
+
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.themed-dropdown:focus {
+    border-color: #1976D2; /* Primary blue focus */
+    box-shadow: 0 0 0 0.2rem rgba(25, 118, 210, 0.25); /* Blue glow */
+    outline: none;
+}
+
+.selection-submit-btn {
+    /* Use the same styling as the main button but with the "Passport Blue" gradient */
+    background: linear-gradient(180deg, #1565C0 0%, #0D47A1 100%) !important;
+}
+
+.dropdown-loading {
+    padding: 10px;
+    color: #546e7a;
+    text-align: center;
+    border: 1px dashed #e0e0e0;
+    border-radius: 4px;
+}
