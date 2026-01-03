@@ -21,18 +21,29 @@ const fetchApplicationData = async (id) => {
         const processedData = {
             id: String(apiData.id),
             firstName: apiData.first_name,
+            ...(apiData.first_name_score !== null && { firstNameScore: apiData.first_name_score }),
             middleName: apiData.middle_name,
+    ...(apiData.middle_name_score !== null && { middleNameScore: apiData.middle_name_score }),
             lastName: apiData.last_name,
+            ...(apiData.last_name_score !== null && { lastNameScore: apiData.last_name_score }),
             gender: apiData.gender,
+        ...(apiData.gender_score !== null && { genderScore: apiData.gender_score }),
             dob: apiData.dob,
+    ...(apiData.dob_score !== null && { dobScore: apiData.dob_score }),
             phone: apiData.phone,
+...(apiData.phone_score !== null && { phoneScore: apiData.phone_score }),
             email: apiData.email,
+...(apiData.email_score !== null && { emailScore: apiData.email_score }),
             presentAddress: {
                 line: apiData.present_address,
                 city: apiData.present_city,
                 state: apiData.present_state,
                 pincode: apiData.present_pincode,
                 country: apiData.present_country,
+    // Optional scores within nested object
+        ...(apiData.present_address_line_score !== null && { lineScore: apiData.present_address_line_score }),
+        ...(apiData.present_city_score !== null && { cityScore: apiData.present_city_score }),
+        ...(apiData.present_pincode_score !== null && { pincodeScore: apiData.present_pincode_score }),
             },
             permanentAddress: {
                 line: apiData.permanent_address || 'Same as Present',
@@ -40,6 +51,22 @@ const fetchApplicationData = async (id) => {
                 state: apiData.permanent_state || '',
                 pincode: apiData.permanent_pincode || '',
                 country: apiData.permanent_country || '',
+                // Conditionally adding scores for each permanent address field
+    ...(apiData.permanent_address_line_score !== null && { 
+        lineScore: apiData.permanent_address_line_score 
+    }),
+    ...(apiData.permanent_city_score !== null && { 
+        cityScore: apiData.permanent_city_score 
+    }),
+    ...(apiData.permanent_state_score !== null && { 
+        stateScore: apiData.permanent_state_score 
+    }),
+    ...(apiData.permanent_pincode_score !== null && { 
+        pincodeScore: apiData.permanent_pincode_score 
+    }),
+    ...(apiData.permanent_country_score !== null && { 
+        countryScore: apiData.permanent_country_score 
+    }),
             },
             documents: {
                 identity_proof: { type: 'Name/Gender Proof', url: apiData.name_gender_proof, fileName: 'uploaded' }, // Placeholder fileName
@@ -281,7 +308,53 @@ const VerificationReview = () => {
                             </p>
                         </div>
                     )}
-                   
+                   {/* --- SEPARATE SCORE AUDIT BOX --- */}
+<div className="mb-8 p-6 bg-[#f8fafc] border border-blue-200 rounded-xl shadow-sm">
+    <div className="flex items-center mb-4">
+        <Landmark className="w-5 h-5 text-[#0D47A1] mr-2" />
+        <h3 className="text-sm font-bold text-[#0D47A1] uppercase tracking-wider">Confidence score</h3>
+    </div>
+
+    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        {/* The "For Loop" logic using Object.entries and filter */}
+        {Object.entries(data).map(([key, value]) => {
+            // Check if the key ends in 'Score' and has a value
+            if (key.endsWith('Score') && value !== null) {
+                const label = key.replace('Score', '').replace(/([A-Z])/g, ' $1');
+                return (
+                    <div key={key} className="bg-white p-3 rounded-lg border border-gray-100 shadow-sm flex flex-col items-center">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase mb-1">{label}</span>
+                        <span className={`text-xl font-black ${value >= 0.8 ? 'text-green-600' : 'text-orange-500'}`}>
+                            {Math.round(value * 100)}%
+                        </span>
+                    </div>
+                );
+            }
+            return null;
+        })}
+
+        {/* Nested Loop for Address Scores */}
+        {['presentAddress', 'permanentAddress'].map(addrType => (
+            Object.entries(data[addrType] || {}).map(([key, value]) => {
+                if (key.endsWith('Score') && value !== null) {
+                    const label = key.replace('Score', '');
+                    return (
+                        <div key={`${addrType}-${key}`} className="bg-white p-3 rounded-lg border border-gray-100 shadow-sm flex flex-col items-center">
+                            <span className="text-[10px] font-bold text-gray-400 uppercase mb-1">
+                                {addrType === 'presentAddress' ? 'Pres.' : 'Perm.'} {label}
+                            </span>
+                            <span className={`text-xl font-black ${value >= 0.8 ? 'text-green-600' : 'text-orange-500'}`}>
+                                {Math.round(value * 100)}%
+                            </span>
+                        </div>
+                    );
+                }
+                return null;
+            })
+        ))}
+    </div>
+</div>
+{/* --- END OF SCORE BOX --- */}
 
                 </div>
             </div>

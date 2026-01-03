@@ -301,6 +301,7 @@ const { EnterFullScreenButton } = fullScreenPluginInstance;
   const [viewfile, setviewfile] = useState(null);
   const [errors, setErrors] = useState({});
 const [dob_proof_score, setDobproof] = useState('');
+const [matchScores, setMatchScores] = useState({});
 
   // 2. State for Gender
   const [gender_name_proof_score, setGendernameproof] = useState('');
@@ -440,6 +441,7 @@ const updatedAutoFillDoc = {
 }
 
   }
+
   //verify passport data
   const verfiy_passport = () => {
 const data = new FormData();
@@ -502,7 +504,64 @@ console.log("fffffffffff")
 
 // one of marking in address type
 const result = response.data.verification_result; // The JSON object you pasted
+////////// storing score values
+  const scores = {};
 
+["first_name", "middle_name", "last_name", "gender"].forEach(key => {
+  if (result[key]?.match_score !== undefined) {
+    console.log("ss")
+          scores[`${key}_score`] = result[key].match_score;
+
+  }
+});
+
+
+if (result.date_of_birth?.match_score !== undefined) {
+      scores.dob_score = result.date_of_birth.match_score;
+
+}
+
+const address = result.address || {};
+
+if (address.address_line !== undefined) {
+ 
+  // matchScores.present_address_line_score = address.address_line.match_score ?? null;
+
+
+}
+if (address.city !== undefined) {
+
+ // matchScores.present_city_score = address.city.match_score ?? null;
+
+}
+if (address.state !== undefined) {
+//  matchScores.present_state_score = address.state.match_score ?? null;
+}
+if (address.pincode !== undefined) {
+ // matchScores.present_pincode_score = address.pincode.match_score ?? null;
+}
+if (address.country !== undefined) {
+ // matchScores.present_country_score = address.country.match_score ?? null;
+}
+
+console.log(scores)
+setMatchScores(scores); // ✅ persist across renders
+
+
+
+
+
+
+
+console.log(matchScores,"ddd")
+
+
+
+
+
+
+
+///////////////
 // 1. Helper Function to format the data safely
 const getFieldData = (key, data) => {
   // if data is null (like last_name) or has no coordinates, skip it
@@ -560,14 +619,14 @@ let updatedAutoFillDoc2 = {
 // ---------------------------------------------------------
 // Note: In your current JSON, 'address' does not have 'coordinates' inside it.
 // If you update your backend to send coordinates for the address block, this will work.
-const addrObj = result.address;
-const addrBox = addrObj?.coordinates || null; // The main box for the whole address
-const addressFields = ["address_line", "city", "state", "pincode", "country"];
+const addrObj = result;
+//const addrBox = addrObj?.coordinates || null; // The main box for the whole address
+const addressFields = ["address_line1", "city", "state", "pincode", "country"];
 
 const addressCoords = addressFields
   .map(key => {
      // Pass the key, the value (string), and the main address box coordinates
-     return getFieldData(key, addrObj?.[key], addrBox);
+     return getFieldData(key, addrObj?.[key]);
   })
   .filter(item => item !== null);
  highlightedPreviewUrl = await generateHighlightedFile(
@@ -590,7 +649,7 @@ const addressCoords = addressFields
 // ---------------------------------------------------------
 // DEBUGGING
 // ---------------------------------------------------------
-console.log("Identity Boxes:", identityCoords);
+console.log("Idedntity Boxed:", identityCoords);
 console.log("DOB Boxes:", dobCoords);
 console.log("Address Boxes:", addressCoords);
   })
@@ -604,7 +663,7 @@ console.log("Address Boxes:", addressCoords);
   // Submit Passport Data
   const submit_passport = () => {
   let data = new FormData();
-
+console.log(matchScores,"ol")
   // --- A. Append Simple Fields ---
   data.append('first_name', formData.firstName);
   data.append('middle_name', formData.middleName);
@@ -614,7 +673,13 @@ console.log("Address Boxes:", addressCoords);
   data.append('phone', formData.phone);
   data.append('email', formData.email);
   data.append('permanent_address_same_as_present', formData.permanent_address_same_as_present);
-
+  console.log(matchScores,"hi")
+Object.entries(matchScores).forEach(([key, value]) => {
+  if (value !== null && value !== undefined) {
+    console.log("d",key)
+    data.append(key, value);
+  }
+});
 // Address Loop
   Object.keys(formData.presentAddress).forEach(key => {
     // Reading from State (formData)
