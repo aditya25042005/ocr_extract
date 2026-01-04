@@ -1,73 +1,55 @@
 import os
 import uuid
+import fitz  # PyMuPDF
 from ultralytics import YOLO
-from pdf2image import convert_from_path
-from PIL import Image
+from huggingface_hub import hf_hub_download
 
-# ---------------------------------------------------------
-# Load YOLO model ONCE (important for performance)
-# ---------------------------------------------------------
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "model_cache/best.pt")
+# Load model once
+MODEL_PATH = hf_hub_download(
+    repo_id="logasanjeev/indian-id-validator",
+    filename="models/Id_Classifier.pt"
+)
 model = YOLO(MODEL_PATH)
 
-# Confidence threshold (balanced for recall)
-YOLO_CONF = 0.45
-YOLO_IMGSZ = 640
+CONF_THRESHOLD = 0.7
 
 
-# ---------------------------------------------------------
-# YOLO inference on a single image
-# ---------------------------------------------------------
-def _detect_aadhaar_in_image(image_path: str) -> bool:
-    """
-    Returns True if YOLO detects *any* Aadhaar-related object.
-    """
-    results = model.predict(
-        source=image_path,
-        conf=YOLO_CONF,
-        imgsz=YOLO_IMGSZ,
-        verbose=False
-    )[0]
+def _is_aadhaar_image(image_path: str) -> bool:
+    results = model(image_path, verbose=False)
+    probs = results[0].probs
 
-    # If model predicts at least one box → Aadhaar detected
-    return results.boxes is not None and len(results.boxes) > 0
+    class_name = model.names[probs.top1]
+    confidence = float(probs.top1conf)
+
+    return (
+        class_name in ["aadhar_front", "aadhar_back"]
+        and confidence >= CONF_THRESHOLD
+    )
 
 
-# ---------------------------------------------------------
-# Public function used by Django view
-# ---------------------------------------------------------
 def is_aadhaar(file_path: str) -> bool:
-    """
-    Detect Aadhaar card from image or PDF.
-    """
+    file_path = str(file_path)
 
-    file_path = str(file_path).lower()
+    # ---------- IMAGE ----------
+    if file_path.lower().endswith((".jpg", ".jpeg", ".png")):
+        return _is_aadhaar_image(file_path)
 
-    # ---------------- IMAGE ----------------
-    if file_path.endswith((".jpg", ".jpeg", ".png")):
-        return _detect_aadhaar_in_image(file_path)
+    # ---------- PDF ----------
+    if file_path.lower().endswith(".pdf"):
+        doc = fitz.open(file_path)
 
-    # ---------------- PDF ------------------
-    if file_path.endswith(".pdf"):
-        try:
-            pages = convert_from_path(file_path, dpi=300)
-        except Exception:
-            # PDF unreadable
-            return False
-
-        for page in pages:
+        for page in doc:
+            pix = page.get_pixmap(dpi=300)
             temp_img = f"/tmp/aadhaar_{uuid.uuid4().hex}.jpg"
-            page.save(temp_img, "JPEG")
+            pix.save(temp_img)
 
             try:
-                if _detect_aadhaar_in_image(temp_img):
+                if _is_aadhaar_image(temp_img):
                     return True
             finally:
-                # Cleanup temp file
                 if os.path.exists(temp_img):
                     os.remove(temp_img)
 
         return False
 
-    # Unsupported file type
     return False
