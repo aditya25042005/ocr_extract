@@ -291,8 +291,14 @@ def extract_fields_with_coords(lines_data):
     gender_match = re.search(r'\b(Male|Female|Transgender)\b', full_text_block, re.IGNORECASE)
     if gender_match:
         raw_val = gender_match.group(0)
+        gender_map = {
+            "male": "M",
+            "female": "F",
+            "transgender": "O"
+        }
+        normalized_gender = gender_map[raw_val.lower()]
         coords, conf, page, w, h, path = map_to_line(raw_val)
-        final_output["Gender"] = create_field(raw_val.title(), coords, conf, page, w, h, path)
+        final_output["Gender"] = create_field(normalized_gender, coords, conf, page, w, h, path)
 
     # --- 3. GLiNER ---
     labels = ["person name", "address", "city", "state"]
