@@ -351,7 +351,7 @@ const [matchScores, setMatchScores] = useState({});
   });
   //auto fill submit
   const submit_auto_fill = async() => {
-console.log("auto fill");
+console.log(formData.documents.auto_fill.docType);
     /////
 
    if(!formData.documents.auto_fill.file){
@@ -362,7 +362,7 @@ console.log("auto fill");
       console.log(formData.documents.auto_fill.name);
       const data = new FormData();
       data.append('file', formData.documents.auto_fill.file);
-       api.post('/api/handwritten/ocr/',data,{headers: {
+       api.post(`/api/${formData.documents.auto_fill.docType == 'handwritten' ? 'handwritten':'aadhar'}/ocr/`,data,{headers: {
           'Content-Type': 'multipart/form-data',
         }},)
       .then( async function (response) {
@@ -391,6 +391,7 @@ if (rawDob && typeof rawDob === 'string') {
 
 
  const fields = receivedData?.['fields'] || {};
+//  console.log(fields, "hii")
  const coordinateList = Object.entries(fields) // Use entries to get the Key (e.g., "State")
   .map(([key, field]) => ({
       label: key,                     // "State", "Country", etc.
@@ -434,9 +435,9 @@ const updatedAutoFillDoc = {
         }));
         setviewfile(updatedAutoFillDoc);
         set_new_class("full-form");
-     
+     console.log(updatedAutoFillDoc)
   }).catch(function (error) {
-
+    console.error(error);
   })
 }
 
