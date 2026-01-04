@@ -18,7 +18,7 @@ from craft_text_detector import (
 FILE_PATH = 'doc7.jpg'
 USE_GPU = torch.cuda.is_available()
 device = "cuda" if USE_GPU else "cpu"
-POPPLER_PATH = "/opt/homebrew/bin"
+POPPLER_PATH = r'D:\ELHAN\MOSIP\poppler-25.12.0\Library\bin'
 
 print(f"Running on: {device.upper()}")
 
@@ -27,8 +27,8 @@ print(f"Running on: {device.upper()}")
 #FOR KARN
 MODEL_CACHE = r"C:\Users\adity\Downloads\backend_ocr\ocr_extract\backend\ocr_backend\ML\model_cache\models--microsoft--trocr-large-handwritten\snapshots\e68501f437cd2587ae5d68ee457964cac824ddee"
 
-processor = TrOCRProcessor.from_pretrained(MODEL_CACHE, local_files_only=True)
-model = VisionEncoderDecoderModel.from_pretrained(MODEL_CACHE, local_files_only=True).to(device)
+processor = TrOCRProcessor.from_pretrained('microsoft/trocr-large-handwritten')
+model = VisionEncoderDecoderModel.from_pretrained('microsoft/trocr-large-handwritten').to(device)
 
 from pathlib import Path
 

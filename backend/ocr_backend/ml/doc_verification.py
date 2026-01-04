@@ -262,7 +262,7 @@ if __name__ == "__main__":
 
     # UPDATE THESE PATHS to your actual files
     path_to_birth = r"D:\ELHAN\MOSIP\OCR\voter.jpg"
-    path_to_id = r"D:\ELHAN\MOSIP\OCR\pan.jpg"
+    path_to_id = r"D:\ELHAN\MOSIP\OCR\voter.jpg"
     path_to_address = r"D:\ELHAN\MOSIP\OCR\doc7.jpg" # Using Aadhaar or Driver's license here
 
     # Verify existing files

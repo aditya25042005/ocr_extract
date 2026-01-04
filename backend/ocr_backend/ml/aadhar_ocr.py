@@ -288,9 +288,9 @@ def extract_fields_with_coords(lines_data):
 
             if target_key == "Address":
                 if "Address" in final_output:
-                     # Avoid duplicates if GLiNER detects parts of the same address
-                     if txt not in final_output["Address"]["value"]: 
-                         final_output["Address"]["value"] += ", " + txt
+                      # Avoid duplicates if GLiNER detects parts of the same address
+                      if txt not in final_output["Address"]["value"]: 
+                          final_output["Address"]["value"] += ", " + txt
                 else: 
                     final_output["Address"] = {
                         "value": txt, "coordinates": coords, "confidence_score": final_conf, "page": page
@@ -318,9 +318,13 @@ def extract_fields_with_coords(lines_data):
         final_output["Last Name"] = {"value": last, "coordinates": coords, "confidence_score": conf, "page": page}
         del final_output["Name"]
 
+    # --- 5. CLEAN OUTPUT (Remove Nulls) ---
     required = ["First Name", "Middle Name", "Last Name", "DOB", "Gender", "Address", "City", "State"]
-    return {k: final_output.get(k, None) for k in required}
-
+    
+    # Only include keys that exist in final_output and are not None
+    clean_results = {k: final_output.get(k) for k in required if final_output.get(k) is not None}
+    
+    return {"fields": clean_results}
 # --- EXECUTE ---
 if __name__ == "__main__":
     ocr_lines = run_ocr_pipeline(FILE_PATH)

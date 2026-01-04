@@ -250,21 +250,83 @@ def AadharDetectView(request):
 #           QUALITY SCORE VIEW
 # -------------------------------------------------------
 
+import cv2
+import numpy as np
+from ml.new_code import calc_document_quality, pdf_to_image, MAX_PIXELS
+
 @api_view(['POST'])
 def quality_score_view(request):
-    from ml.quality_score import process_uploaded_file, calc_scores
+    """
+    Django equivalent of:
+    @app.post("/document-quality")
+    """
 
-    file = request.FILES.get("file")
-    if not file:
-        return Response({"error": "Upload a file"}, status=400)
+    uploaded_file = request.FILES.get("file")
+
+    if not uploaded_file:
+        return Response(
+            {"error": "No file provided"},
+            status=400
+        )
+
+    content_type = uploaded_file.content_type
+
+    if not content_type or not content_type.startswith(
+        ("image/", "application/pdf")
+    ):
+        return Response(
+            {"error": "Unsupported file type"},
+            status=400
+        )
 
     try:
-        image = process_uploaded_file(file)
-        result = calc_scores(image)
-        return Response(result)
+        data = uploaded_file.read()
+    except Exception:
+        return Response(
+            {"error": "Failed to read file"},
+            status=400
+        )
 
-    except Exception as e:
-        return Response({"error": str(e)}, status=500)
+    # ---- PDF → Image ----
+    if content_type == "application/pdf":
+        image = pdf_to_image(data)
+    else:
+        np_img = np.frombuffer(data, np.uint8)
+        image = cv2.imdecode(np_img, cv2.IMREAD_COLOR)
+
+    if image is None:
+        return Response(
+            {"error": "Invalid or corrupted file"},
+            status=400
+        )
+
+    h, w = image.shape[:2]
+    if h * w > MAX_PIXELS:
+        return Response(
+            {"error": "Image too large"},
+            status=400
+        )
+
+    result = calc_document_quality(image)
+
+    return Response(result)
+
+
+# @api_view(['POST'])
+# def quality_score_view(request):
+#     from ml.quality_score import process_uploaded_file, calc_scores
+
+#     file = request.FILES.get("file")
+#     if not file:
+#         return Response({"error": "Upload a file"}, status=400)
+
+#     try:
+#         image = process_uploaded_file(file)
+#         result = calc_scores(image)
+#         return Response(result)
+
+#     except Exception as e:
+#         return Response({"error": str(e)}, status=500)
     
 @api_view(['GET'])
 def passport_ids_view(req):
