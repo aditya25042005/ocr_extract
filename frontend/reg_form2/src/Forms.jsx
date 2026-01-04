@@ -13,7 +13,7 @@ const DOC_OPTIONS = {
   identity: ['Aadhaar Card', 'Driving License', 'Voter ID', 'PAN Card'],
   dob: ['Birth Certificate', 'SSLC Marks Card', 'PAN CARD', 'Aadhaar Card'],
   address: ['Aadhaar Card', 'Driving License', 'Utility Bill', 'Rent Agreement'],
-  autofill:['handwritten','Aadhaar Card']
+  autofill:['handwritten','Printed']
 };
 import { toast } from "sonner"
 
@@ -119,7 +119,7 @@ const generateHighlightedFile = async (originalFile, coordsList) => {
     const pdfDoc = await PDFDocument.load(arrayBuffer);
     const firstPage = pdfDoc.getPages()[0]; 
     const { height: pageHeight } = firstPage.getSize();
-
+   console.log(coordsList)
     coordsList.forEach((coords) => {
       // Data is [x1, y1, x2, y2]
       const [x1, x2, y1, y2] = coords;
@@ -204,6 +204,7 @@ const generateHighlightedFile2 = async (originalFile, coordsList) => {
   if (!coordsList || coordsList.length === 0) return URL.createObjectURL(originalFile);
 
   const fileType = originalFile.type;
+  console.log(coordsList)
 
   // --- PDF HANDLING ---
   if (fileType === 'application/pdf') {
@@ -211,29 +212,74 @@ const generateHighlightedFile2 = async (originalFile, coordsList) => {
     const pdfDoc = await PDFDocument.load(arrayBuffer);
     const firstPage = pdfDoc.getPages()[0]; 
     const { height: pageHeight } = firstPage.getSize();
+//////////
+
+
+
+/////
+const pageGroups = {};
+const pages = pdfDoc.getPages();
 
     coordsList.forEach((coords) => {
       // Data is [x1, y1, x2, y2]
-      const [x1, x2, y1, y2] = coords;
+             
 
-      const width = Math.abs(x2 - x1);
-      const height = Math.abs(y2 - y1);
-      
-      // Calculate Y for PDF (Flip axis: PageHeight - TopY)
-      // Top visual Y is the smaller number in PDF coordinates usually, but we flip.
-      // Standard Formula: PageHeight - (y_bottom_left + height)
-      // Since inputs are likely Top-Left based images coords:
-      // We convert Image Top-Left (y1) to PDF Bottom-Left.
-      const pdfY = pageHeight - (y1 + height);
 
-      firstPage.drawRectangle({
-        x: x1,
-        y: pdfY,
-        width: width,
-        height: height,
-        borderColor: rgb(0, 0.8, 0.8), 
-        borderWidth: 2,
-      });
+          const pageIndex = (coords.page ?? 1) - 1;
+  const page = pages[pageIndex] || pages[0];
+    const [x1, x2, y1, y2] = coords.coordinates;
+          const IMAGE_WIDTH =  coords.imgWidth;
+const IMAGE_HEIGHT = coords.imgHeight;
+
+const { width: pdfW, height: pdfH } = page.getSize();;
+
+const scaleX = pdfW / IMAGE_WIDTH;
+const scaleY = pdfH / IMAGE_HEIGHT;
+
+
+        const width = x2 - x1;
+  const height = y2 - y1;
+  const pdfX = x1 * scaleX;
+  const pdfY = pdfH - (y2 * scaleY); // flip Y
+  const pdfWRect = width * scaleX;
+  const pdfHRect = height * scaleY;
+
+  // 🎨 Color logic (same as canvas)
+  let color;
+  if (coords.score > 0.8) {
+    color = rgb(0, 0.8, 0); // green
+  } else if (coords.score > 0.5) {
+    color = rgb(1, 0.4, 0.7); // pink
+  } else {
+    color = rgb(1, 0, 0); // red
+  }
+  
+
+     
+     page.drawRectangle({
+    x: pdfX,
+    y: pdfY,
+    width: pdfWRect,
+    height: pdfHRect,
+    borderColor: color,
+    borderWidth: 3,
+  });
+
+  // 📝 Text (score)
+  page.drawText(`${Math.round(coords.score * 100)}%`, {
+    x: pdfX + pdfWRect + 6,
+    y: pdfY + pdfHRect / 2 + 10,
+    size: 12,
+    color,
+  });
+
+  // 🏷 Label
+  page.drawText(coords.label || "", {
+    x: pdfX + pdfWRect + 6,
+    y: pdfY + pdfHRect / 2 - 5,
+    size: 12,
+    color,
+  });
     });
 
     const pdfBytes = await pdfDoc.save();
@@ -397,7 +443,11 @@ if (rawDob && typeof rawDob === 'string') {
       label: key,                     // "State", "Country", etc.
       value: field.value || field.raw_line, // "Kerala", "India" (fallback to raw_line if value is missing)
       coordinates: field.coordinates, // [127, 983, 793, 936]
-      score: field.confidence_score   // 0.98
+      score: field.confidence_score,   // 0.98
+       page: field.page ?? 2  , // DEFAULT TO PAGE 1
+         imgWidth: field.image_width ?? 2480,      // ✅ default OCR image width
+    imgHeight: field.image_height ?? 3508,
+
   }))
   .filter(item => item.coordinates && Array.isArray(item.coordinates) && item.coordinates.length === 4);
 const highlightedPreviewUrl = await generateHighlightedFile2(
@@ -909,6 +959,8 @@ if (isValid) {
   alert("aadhar found")
 } else {
   // Stop everything
+    alert("aadhar not found")
+
 }
     }
     console.log(file,"hi");
