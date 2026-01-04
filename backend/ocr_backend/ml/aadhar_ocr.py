@@ -166,24 +166,24 @@ def detect_text_craft(image_rgb):
 
 # --- 5. MULTI-PAGE OCR PIPELINE ---
 def run_ocr_pipeline(file_path):
-    images = load_file_as_images(file_path) # Now returns list of images
+    images = load_file_as_images(file_path)
     if not images: return []
 
     all_pages_data = []
 
     print(f"DEBUG: Processing {len(images)} page(s)...")
 
-    # Loop through every page found in the PDF
     for page_idx, image_numpy_rgb in enumerate(images):
         current_page_num = page_idx + 1
-        print(f"\n--- Processing Page {current_page_num} ---")
+        img_h, img_w, _ = image_numpy_rgb.shape  # Get dimensions here
+        
+        print(f"\n--- Processing Page {current_page_num} ({img_w}x{img_h}) ---")
         
         boxes = detect_text_craft(image_numpy_rgb)
         pil_image = Image.fromarray(image_numpy_rgb)
         
         for i, (x, y, w, h) in enumerate(boxes):
             pad = 4
-            img_h, img_w, _ = image_numpy_rgb.shape
             x_new, y_new = max(0, int(x) - pad), max(0, int(y) - pad)
             w_new, h_new = min(img_w - x_new, int(w) + 2*pad), min(img_h - y_new, int(h) + 2*pad)
             cropped = pil_image.crop((x_new, y_new, x_new+w_new, y_new+h_new))
@@ -211,7 +211,10 @@ def run_ocr_pipeline(file_path):
                     "text": cleaned_text,
                     "coordinates": [int(x), int(x+w), int(y), int(y+h)],
                     "ocr_confidence": round(conf, 4),
-                    "page": current_page_num  # <--- STORE PAGE NUMBER HERE
+                    "page": current_page_num,
+                    "page_width": img_w,          # <--- Added Width
+                    "page_height": img_h,         # <--- Added Height
+                    "file_path": file_path        # <--- Added Source File
                 })
                 print(f"P{current_page_num} | Line {i+1:02d} | {cleaned_text}")
 
@@ -223,25 +226,49 @@ def extract_fields_with_coords(lines_data):
     full_text_block = "\n".join([line['text'] for line in lines_data])
     final_output = {}
 
-    # --- UPDATED MAPPER: Returns (Coords, Conf, Page) ---
+    # --- UPDATED MAPPER: Returns (Coords, Conf, Page, Width, Height, FilePath) ---
     def map_to_line(value_text):
-        if not value_text: return [], 0.0, None
+        if not value_text: return [], 0.0, None, 0, 0, ""
         value_lower = value_text.lower()
         
+        # Helper to extract all metadata from a line object
+        def get_meta(line_obj):
+            return (
+                line_obj['coordinates'], 
+                line_obj['ocr_confidence'], 
+                line_obj['page'],
+                line_obj.get('page_width', 0),
+                line_obj.get('page_height', 0),
+                line_obj.get('file_path', "")
+            )
+
         # 1. Exact Match
         for line in lines_data:
             if value_lower in line['text'].lower(): 
-                return line['coordinates'], line['ocr_confidence'], line['page']
+                return get_meta(line)
         
         # 2. Fuzzy Match
         for line in lines_data:
             line_lower = line['text'].lower()
             if value_lower in line_lower or line_lower in value_lower:
                 if len(line['text']) > 4: 
-                    return line['coordinates'], line['ocr_confidence'], line['page']
-        return [], 0.0, None
+                    return get_meta(line)
+                    
+        return [], 0.0, None, 0, 0, ""
 
-    # --- 1. DOB (Chronological Sort) ---
+    # --- Helper to create standard field dict ---
+    def create_field(value, coords, conf, page, w, h, path):
+        return {
+            "value": value,
+            "coordinates": coords,
+            "confidence_score": conf,
+            "page": page,
+            "image_width": w,
+            "image_height": h,
+            "file_path": path
+        }
+
+    # --- 1. DOB ---
     date_pattern = r'\b\d{2}[/-]\d{2}[/-]\d{4}\b'
     all_date_matches = re.findall(date_pattern, full_text_block)
     parsed_dates = []
@@ -254,25 +281,18 @@ def extract_fields_with_coords(lines_data):
         except ValueError: continue
 
     if parsed_dates:
-        parsed_dates.sort(key=lambda x: x[0]) # Sort oldest first
+        parsed_dates.sort(key=lambda x: x[0])
         earliest_raw_val = parsed_dates[0][1]
         
-        coords, conf, page = map_to_line(earliest_raw_val)
-        final_output["DOB"] = {
-            "value": earliest_raw_val.replace('/', '-'), 
-            "coordinates": coords, 
-            "confidence_score": conf,
-            "page": page
-        }
+        coords, conf, page, w, h, path = map_to_line(earliest_raw_val)
+        final_output["DOB"] = create_field(earliest_raw_val.replace('/', '-'), coords, conf, page, w, h, path)
 
     # --- 2. GENDER ---
     gender_match = re.search(r'\b(Male|Female|Transgender)\b', full_text_block, re.IGNORECASE)
     if gender_match:
         raw_val = gender_match.group(0)
-        coords, conf, page = map_to_line(raw_val)
-        final_output["Gender"] = {
-            "value": raw_val.title(), "coordinates": coords, "confidence_score": conf, "page": page
-        }
+        coords, conf, page, w, h, path = map_to_line(raw_val)
+        final_output["Gender"] = create_field(raw_val.title(), coords, conf, page, w, h, path)
 
     # --- 3. GLiNER ---
     labels = ["person name", "address", "city", "state"]
@@ -283,29 +303,25 @@ def extract_fields_with_coords(lines_data):
         lbl, txt, score = ent['label'], ent['text'].strip(), float(ent['score'])
         if lbl in key_mapping:
             target_key = key_mapping[lbl]
-            coords, conf, page = map_to_line(txt)
+            coords, conf, page, w, h, path = map_to_line(txt)
             final_conf = conf if conf > 0 else score 
 
             if target_key == "Address":
                 if "Address" in final_output:
-                      # Avoid duplicates if GLiNER detects parts of the same address
                       if txt not in final_output["Address"]["value"]: 
                           final_output["Address"]["value"] += ", " + txt
                 else: 
-                    final_output["Address"] = {
-                        "value": txt, "coordinates": coords, "confidence_score": final_conf, "page": page
-                    }
+                    final_output["Address"] = create_field(txt, coords, final_conf, page, w, h, path)
             elif target_key not in final_output:
-                final_output[target_key] = {
-                    "value": txt, "coordinates": coords, "confidence_score": final_conf, "page": page
-                }
+                final_output[target_key] = create_field(txt, coords, final_conf, page, w, h, path)
 
     # --- 4. NAME SPLITTING ---
     if "Name" in final_output:
-        full_name = final_output["Name"]["value"]
-        coords = final_output["Name"]["coordinates"]
-        conf = final_output["Name"]["confidence_score"]
-        page = final_output["Name"]["page"]
+        name_obj = final_output["Name"]
+        full_name = name_obj["value"]
+        # Retrieve all metadata from the detected Name object
+        base_meta = (name_obj["coordinates"], name_obj["confidence_score"], name_obj["page"], 
+                     name_obj["image_width"], name_obj["image_height"], name_obj["file_path"])
         
         parts = full_name.split()
         first, middle, last = "", "", ""
@@ -313,22 +329,20 @@ def extract_fields_with_coords(lines_data):
         elif len(parts) == 2: first, last = parts[0], parts[1]
         elif len(parts) >= 3: first, last, middle = parts[0], parts[-1], " ".join(parts[1:-1])
         
-        final_output["First Name"] = {"value": first, "coordinates": coords, "confidence_score": conf, "page": page}
-        final_output["Middle Name"] = {"value": middle, "coordinates": coords, "confidence_score": conf, "page": page}
-        final_output["Last Name"] = {"value": last, "coordinates": coords, "confidence_score": conf, "page": page}
+        final_output["First Name"] = create_field(first, *base_meta)
+        final_output["Middle Name"] = create_field(middle, *base_meta)
+        final_output["Last Name"] = create_field(last, *base_meta)
         del final_output["Name"]
 
-    # --- 5. CLEAN OUTPUT (Remove Nulls + Round Scores) ---
+    # --- 5. CLEAN OUTPUT ---
     required = ["First Name", "Middle Name", "Last Name", "DOB", "Gender", "Address", "City", "State"]
     clean_results = {}
 
     for k in required:
         data = final_output.get(k)
         if data is not None:
-            # Round the confidence score to 2 decimal places
             if "confidence_score" in data:
                 data["confidence_score"] = round(data["confidence_score"], 2)
-            
             clean_results[k] = data
             
     return {"fields": clean_results}
