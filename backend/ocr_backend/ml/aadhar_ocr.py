@@ -280,7 +280,7 @@ def extract_fields_with_coords(lines_data):
     key_mapping = {"person name": "Name", "address": "Address", "city": "City", "state": "State"}
 
     for ent in entities:
-        lbl, txt, score = ent['label'], ent['text'].strip(), round(float(ent['score']), 4)
+        lbl, txt, score = ent['label'], ent['text'].strip(), float(ent['score'])
         if lbl in key_mapping:
             target_key = key_mapping[lbl]
             coords, conf, page = map_to_line(txt)
@@ -318,13 +318,21 @@ def extract_fields_with_coords(lines_data):
         final_output["Last Name"] = {"value": last, "coordinates": coords, "confidence_score": conf, "page": page}
         del final_output["Name"]
 
-    # --- 5. CLEAN OUTPUT (Remove Nulls) ---
+    # --- 5. CLEAN OUTPUT (Remove Nulls + Round Scores) ---
     required = ["First Name", "Middle Name", "Last Name", "DOB", "Gender", "Address", "City", "State"]
-    
-    # Only include keys that exist in final_output and are not None
-    clean_results = {k: final_output.get(k) for k in required if final_output.get(k) is not None}
-    
+    clean_results = {}
+
+    for k in required:
+        data = final_output.get(k)
+        if data is not None:
+            # Round the confidence score to 2 decimal places
+            if "confidence_score" in data:
+                data["confidence_score"] = round(data["confidence_score"], 2)
+            
+            clean_results[k] = data
+            
     return {"fields": clean_results}
+
 # --- EXECUTE ---
 if __name__ == "__main__":
     ocr_lines = run_ocr_pipeline(FILE_PATH)
